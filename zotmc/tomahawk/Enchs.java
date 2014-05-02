@@ -1,7 +1,7 @@
 package zotmc.tomahawk;
 
-import static zotmc.tomahawk.Tomahawk.findField;
-import static zotmc.tomahawk.Tomahawk.findMethod;
+import static zotmc.tomahawk.Reflections.findField;
+import static zotmc.tomahawk.Reflections.findMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

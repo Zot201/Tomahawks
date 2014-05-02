@@ -31,8 +31,8 @@ public abstract class FieldAccess<T> {
 	public void set(T value) {
 		try {
 			field.set(object(), value);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -40,10 +40,9 @@ public abstract class FieldAccess<T> {
 	public T get() {
 		try {
 			return (T) field.get(object());
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
 		}
-		return null;
 	}
 
 }
