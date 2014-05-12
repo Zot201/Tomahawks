@@ -1,0 +1,14 @@
+﻿
+tomahawk.gui.on=有効
+tomahawk.gui.off=無効
+tomahawk.gui.resetAll=初期化
+
+tomahawk.gui.config.title=%s コンフィグ
+
+tomahawk.gui.config.general=一般
+tomahawk.gui.config.commonAxesThrowing=通常斧投げ
+tomahawk.gui.config.throwableItems=投擲可能アイテム
+
+tomahawk.gui.config.compatibilities=互換性
+tomahawk.gui.config.tiCHatchetsThrowing=TiC 手斧投げ
+tomahawk.gui.config.tiCFryingPansThrowing=TiC フライパン投げ

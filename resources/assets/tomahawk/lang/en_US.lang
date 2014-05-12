@@ -1,0 +1,14 @@
+﻿
+tomahawk.gui.on=On
+tomahawk.gui.off=Off
+tomahawk.gui.resetAll=Reset All
+
+tomahawk.gui.config.title=%s Config
+
+tomahawk.gui.config.general=General
+tomahawk.gui.config.commonAxesThrowing=Common Axes Throwing
+tomahawk.gui.config.throwableItems=Throwable Items
+
+tomahawk.gui.config.compatibilities=Compatibilities
+tomahawk.gui.config.tiCHatchetsThrowing=TiC Hatchets Throwing
+tomahawk.gui.config.tiCFryingPansThrowing=TiC Frying Pans Throwing
