@@ -31,8 +31,8 @@ public class Config {
 	
 	public final Configurable<Boolean>
 	commonAxesThrowing = new ConfigurableBoolean(GENERAL, "commonAxesThrowing").set(true);
-	public final Configurable<Set<Item>>
-	axeBlacklist = new ConfigurableItemSet(GENERAL, "axeBlacklist");
+	public final ConfigurableItemIdSet
+	axeBlacklist = new ConfigurableItemIdSet(GENERAL, "axeBlacklist");
 	public final Configurable<Set<LogCategory>>
 	debugLoggings = ConfigurableEnumSet.of(LogCategory.class, GENERAL, "debugLoggings");
 	

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import net.minecraftforge.common.config.Configuration;
 
 import com.google.common.base.Function;
-import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 
 public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends Configurable<T> {
@@ -49,8 +48,7 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 		
 		setIterable(FluentIterable
 				.from(Arrays.asList(a))
-				.transform(valueOfFunction())
-				.filter(Predicates.notNull()));
+				.transform(valueOfFunction()));
 		
 	}
 	

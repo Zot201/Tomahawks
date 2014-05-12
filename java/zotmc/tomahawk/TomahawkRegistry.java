@@ -13,13 +13,11 @@ import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.ai.AITomahawkThrowing;
 import zotmc.tomahawk.config.Config;
-import zotmc.tomahawk.util.Refls;
 import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
@@ -95,7 +93,7 @@ public class TomahawkRegistry {
 		Predicate<Item> predicates = Predicates.or(throwableAxes);
 		
 		for (Item i : Utils.itemList())
-			if (!Config.current().axeBlacklist.get().contains(i)
+			if (!Config.current().axeBlacklist.items().get().contains(i)
 					&& predicates.apply(i))
 				throwableAxesCache.add(i);
 	}

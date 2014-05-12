@@ -177,10 +177,6 @@ public class GuiEditItemSet extends GuiEdit {
 					itemEntries.iterator());
 		}
 		
-		public void drawHoveringOver(int mouseX, int mouseY) {
-			
-		}
-		
 	}
 	
 	

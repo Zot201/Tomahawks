@@ -63,7 +63,7 @@ public class GuiConfigScreen extends GuiScreen {
 								return new GuiEditItemSet(
 										GuiConfigScreen.this,
 										config,
-										config.axeBlacklist,
+										config.axeBlacklist.items(),
 										FluentIterable
 											.from(Utils.itemList())
 											.filter(isThrowableAxeRaw()),

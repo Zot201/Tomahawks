@@ -46,7 +46,7 @@ import cpw.mods.fml.common.event.FMLServerStartedEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
-@Mod(modid = MODID, name = NAME, version = "1.2.0.1-1.7.2", guiFactory = GUI_FACTORY)
+@Mod(modid = MODID, name = NAME, version = "1.2.0.2-1.7.2", guiFactory = GUI_FACTORY)
 public class Tomahawk {
 	
 	public static final String
