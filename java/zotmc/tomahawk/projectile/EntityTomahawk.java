@@ -4,7 +4,6 @@ import static net.minecraft.enchantment.Enchantment.fireAspect;
 import static net.minecraft.enchantment.Enchantment.knockback;
 import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
-import static net.minecraft.util.DamageSource.causeThrownDamage;
 import static net.minecraftforge.common.util.ForgeDirection.DOWN;
 import static net.minecraftforge.common.util.ForgeDirection.UP;
 import static zotmc.tomahawk.LogTomahawk.phy4j;
@@ -17,6 +16,7 @@ import static zotmc.tomahawk.projectile.EntityTomahawk.PickUpType.SURVIVAL;
 import static zotmc.tomahawk.util.Utils.PI;
 import static zotmc.tomahawk.util.Utils.atan;
 
+import java.lang.ref.WeakReference;
 import java.util.Random;
 
 import net.minecraft.block.Block;
@@ -75,6 +75,8 @@ public class EntityTomahawk extends AbstractTomahawk {
 	
 	float damageAttr;
 	int knockbackStr;
+	
+	public WeakReference<PlayerTomahawk> fakePlayer;
 	
 	public EntityTomahawk(World world) {
 		super(world);
@@ -279,6 +281,8 @@ public class EntityTomahawk extends AbstractTomahawk {
 				
 				flag = !MinecraftForge.EVENT_BUS.post(new AttackEntityEvent(fakePlayer, mop.entityHit))
 						&& !item.getItem().onLeftClickEntity(item, fakePlayer, mop.entityHit);
+				
+				this.fakePlayer = new WeakReference<PlayerTomahawk>(fakePlayer);
 			}
 			
 			if (flag && mop.entityHit.canAttackWithItem()
@@ -310,7 +314,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 					Entity thrower = getThrower();
 					
 					boolean attacked = mop.entityHit.attackEntityFrom(
-							thrower != null ? causeThrownDamage(this, thrower) : causeThrownDamage(this, this),
+							new TomahawkDamage(this, thrower != null ? thrower : this),
 							damage);
 					
 					if (attacked) {

@@ -54,8 +54,8 @@ public class Enchs {
 			mlClz = Class.forName("net.minecraft.enchantment.EnchantmentHelper$ModifierLiving");
 			diClz = Class.forName("net.minecraft.enchantment.EnchantmentHelper$DamageIterator");
 			imClz = Class.forName("net.minecraft.enchantment.EnchantmentHelper$IModifier");
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		} catch (Throwable e) {
+			Throwables.propagate(e);
 		}
 		
 		emlAccess = FieldAccess

@@ -1,5 +1,6 @@
 package zotmc.tomahawk.util;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -10,6 +11,26 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 
 public class Refls {
+	
+	public static Field getDeclaredField(Class<?> clz, String fieldName) {
+		try {
+			Field ret = clz.getDeclaredField(fieldName);
+			ret.setAccessible(true);
+			return ret;
+		} catch (Throwable e) {
+			throw Throwables.propagate(e);
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T get(Field field, Object obj) {
+		try {
+			return (T) field.get(obj);
+		} catch (Throwable e) {
+			throw Throwables.propagate(e);
+		}
+	}
+	
 	
 	public static Runnable asRunnable(final Object obj, String methodName) {
 		final Method method = getInstanceMethod(obj, methodName);

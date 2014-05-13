@@ -36,6 +36,7 @@ import zotmc.tomahawk.util.Holder;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -46,7 +47,7 @@ import cpw.mods.fml.common.event.FMLServerStartedEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
-@Mod(modid = MODID, name = NAME, version = "1.2.0.2-1.7.2", guiFactory = GUI_FACTORY)
+@Mod(modid = MODID, name = NAME, version = "1.2.1.0-1.7.2", guiFactory = GUI_FACTORY)
 public class Tomahawk {
 	
 	public static final String
@@ -83,6 +84,14 @@ public class Tomahawk {
 		proxy.registerRenderer();
 		
 		DispenserHandler.init();
+		
+		if (isModLoaded("MoreEnchants")) {
+			TomahawkRegistry.registerDamageFaking(
+					FMLCommonHandler.instance().findContainerFor("MoreEnchants"));
+			
+			MinecraftForge.EVENT_BUS.register(new DamageFaker());
+			
+		}
 		
 		if (isModLoaded("onlysilver"))
 			OnlySilverHandler.init();
@@ -170,6 +179,7 @@ public class Tomahawk {
 					player.setCurrentItemOrArmor(0, null);
 				
 				event.useItem = DENY;
+        		event.useBlock = DENY;
 			}
 		}
 	}

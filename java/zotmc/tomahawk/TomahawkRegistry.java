@@ -22,6 +22,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 
+import cpw.mods.fml.common.ModContainer;
+
 public class TomahawkRegistry {
 	
 	//Feel free to access these fields through reflection, their names are remaining unchanged unless stated.
@@ -33,6 +35,9 @@ public class TomahawkRegistry {
 	
 	private static final Queue<Function<Item, SoundType>> hitSounds = Queues.newArrayDeque();
 	private static final Map<Item, SoundType> hitSoundsCache = Maps.newIdentityHashMap();
+	
+	//Experimental feature
+	private static final Set<ModContainer> damageFakings = Sets.newIdentityHashSet();
 	
 	
 	
@@ -47,6 +52,10 @@ public class TomahawkRegistry {
 	
 	public static void registerHitSounds(Function<Item, SoundType> hitSoundFactory) {
 		hitSounds.add(hitSoundFactory);
+	}
+	
+	public static void registerDamageFaking(ModContainer mc) {
+		damageFakings.add(mc);
 	}
 	
 	
@@ -67,6 +76,7 @@ public class TomahawkRegistry {
 	public static boolean isThrowableAxe(ItemStack item) {
 		return item != null && isThrowableAxe(item.getItem());
 	}
+	
 	public static Predicate<Item> isThrowableAxeRaw() {
 		return Predicates.or(throwableAxes);
 	}
@@ -74,6 +84,11 @@ public class TomahawkRegistry {
 	public static SoundType getHitSound(Item axe) {
 		return hitSoundsCache.get(axe);
 	}
+	
+	public static boolean fakeDamages(ModContainer modContainer) {
+		return damageFakings.contains(modContainer);
+	}
+	
 	
 	
 	
