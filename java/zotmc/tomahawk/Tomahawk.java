@@ -15,6 +15,8 @@ import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -22,6 +24,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
+import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +36,7 @@ import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.config.Config.ConfigState;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.EntityTomahawk.PickUpType;
+import zotmc.tomahawk.projectile.PlayerTomahawk;
 import zotmc.tomahawk.util.Holder;
 
 import com.google.common.base.Function;
@@ -42,12 +48,13 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartedEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
-@Mod(modid = MODID, name = NAME, version = "1.2.1.0-1.7.2", guiFactory = GUI_FACTORY)
+@Mod(modid = MODID, name = NAME, version = "1.2.2.0-1.7.2", guiFactory = GUI_FACTORY)
 public class Tomahawk {
 	
 	public static final String
@@ -63,8 +70,8 @@ public class Tomahawk {
 	
 	@Instance(MODID) public static Tomahawk axetomahawk;
 	
-	
-	public Logger log = LogManager.getFormatterLogger(MODID);
+	public final Logger log = LogManager.getFormatterLogger(MODID);
+	public DamageFaker damageFaker;
 	
 	private final Holder<ConfigState> configState = Holder.absent();
 	
@@ -73,7 +80,7 @@ public class Tomahawk {
 		Config.init(new Configuration(event.getSuggestedConfigurationFile()), configState);
 		
 		EntityRegistry.registerModEntity(EntityTomahawk.class,
-				"tomahawk", 0, this, 64, 10, true);
+				"tomahawk", 0, this, 64, 18, true);
 		
 	}
 	
@@ -85,11 +92,12 @@ public class Tomahawk {
 		
 		DispenserHandler.init();
 		
+		
 		if (isModLoaded("MoreEnchants")) {
 			TomahawkRegistry.registerDamageFaking(
 					FMLCommonHandler.instance().findContainerFor("MoreEnchants"));
 			
-			MinecraftForge.EVENT_BUS.register(new DamageFaker());
+			MinecraftForge.EVENT_BUS.register(damageFaker = new DamageFaker());
 			
 		}
 		
@@ -135,6 +143,17 @@ public class Tomahawk {
 		
 	}
 	
+	@EventHandler public void postInit(FMLPostInitializationEvent event) {
+		
+		if (isModLoaded("MoreEnchants"))
+			for (Enchantment ench : Enchantment.enchantmentsList)
+				if (ench != null && ench.getClass().getName().equals(
+						"com.demoxin.minecraft.moreenchants.Enchantment_Vorpal"))
+					damageFaker.register(ench);
+		
+		
+	}
+	
 	@EventHandler public void onServerStart(FMLServerStartedEvent event) {
 		configState.set(AVAILABLE);
 		
@@ -174,7 +193,7 @@ public class Tomahawk {
 				}
 				
 				boolean isCreative = player.capabilities.isCreativeMode;
-				throwTomahawk(player, world, true, isCreative ? CREATIVE : SURVIVAL);
+				throwTomahawk(player, player.getHeldItem(), world, true, isCreative ? CREATIVE : SURVIVAL);
 				if (!isCreative)
 					player.setCurrentItemOrArmor(0, null);
 				
@@ -183,11 +202,7 @@ public class Tomahawk {
 			}
 		}
 	}
-
-	public void throwTomahawk(EntityLivingBase thrower, World world,
-			boolean isForwardSpin, PickUpType pickUpType) {
-		throwTomahawk(thrower, thrower.getHeldItem(), world, isForwardSpin, pickUpType);
-	}
+	
 	public void throwTomahawk(EntityLivingBase thrower, ItemStack tomahawk, World world,
 			boolean isForwardSpin, PickUpType pickUpType) {
 		
@@ -197,14 +212,47 @@ public class Tomahawk {
 		
 		thrower.setSprinting(false);
 		thrower.swingItem();
-		if (thrower instanceof EntityPlayer)
+		if (thrower instanceof EntityPlayer) {
 			((EntityPlayer) thrower).addExhaustion(0.3F);
+			
+			if (world.isRemote) {
+				
+			}
+		}
 		
 		world.playSoundAtEntity(thrower, "random.bow", 1,
 				1 / (rand.nextFloat() * 0.4F + 1.2F) + 0.5F);
 		
 		if (!world.isRemote)
 			world.spawnEntityInWorld(hawk);
+		
+	}
+	
+	
+	
+	@SubscribeEvent public void onLivingHurt(LivingHurtEvent event) {
+		if (!event.entityLiving.worldObj.isRemote) {
+			Entity sod = event.source.getSourceOfDamage();
+			
+			if ((sod instanceof EntityTomahawk || sod instanceof PlayerTomahawk)
+					&& sod.isBurning())
+				event.entityLiving.setFire(5);
+			
+		}
+		
+	}
+	
+	@SubscribeEvent public void onEntityConstruct(EntityConstructing event) {
+		if (event.entity.worldObj != null && !event.entity.worldObj.isRemote
+				&& event.entity instanceof EntityPlayer)
+			new PositionTracker((EntityPlayer) event.entity).register();
+		
+	}
+	
+	@SubscribeEvent public void onLivingUpdate(LivingUpdateEvent event) {
+		if (!event.entity.worldObj.isRemote
+				&& event.entity instanceof EntityPlayer)
+			PositionTracker.get((EntityPlayer) event.entity).onUpdate();
 		
 	}
 

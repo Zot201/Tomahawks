@@ -4,9 +4,10 @@ import static net.minecraft.enchantment.Enchantment.fireAspect;
 import static net.minecraft.enchantment.Enchantment.knockback;
 import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
+import static net.minecraft.util.MathHelper.cos;
+import static net.minecraft.util.MathHelper.sin;
 import static net.minecraftforge.common.util.ForgeDirection.DOWN;
 import static net.minecraftforge.common.util.ForgeDirection.UP;
-import static zotmc.tomahawk.LogTomahawk.phy4j;
 import static zotmc.tomahawk.LogTomahawk.pro4j;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_AIR;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.NO_REBOUNCE;
@@ -15,6 +16,7 @@ import static zotmc.tomahawk.projectile.EntityTomahawk.PickUpType.CREATIVE;
 import static zotmc.tomahawk.projectile.EntityTomahawk.PickUpType.SURVIVAL;
 import static zotmc.tomahawk.util.Utils.PI;
 import static zotmc.tomahawk.util.Utils.atan;
+import static zotmc.tomahawk.util.Utils.sqrt;
 
 import java.lang.ref.WeakReference;
 import java.util.Random;
@@ -106,10 +108,6 @@ public class EntityTomahawk extends AbstractTomahawk {
 					&& thrower.ridingEntity == null)
 				setIsCritical(true);
 		}
-		
-		motionX += thrower.motionX;
-		motionY += thrower.motionY;
-		motionZ += thrower.motionZ;
 		
 	}
 	
@@ -220,14 +218,6 @@ public class EntityTomahawk extends AbstractTomahawk {
 		}
 	}
 	
-	private static float modAngle(float rotation) {
-		if (rotation < 0)
-			for (; rotation < -180; rotation += 360);
-		else
-			for (; rotation >= 180; rotation -= 360);
-		return rotation;
-	}
-	
 	@Override public void onUpdate() {
 		/*
 		pro4j().debug("EntityTomahawk.%s [%s at (%.0f, %.0f, %.0f)]",
@@ -253,6 +243,15 @@ public class EntityTomahawk extends AbstractTomahawk {
 								posY + motionY * i / 4.0,
 								posZ + motionZ * i / 4.0,
 								-motionX, -motionY + 0.2D, -motionZ);
+				
+				if (worldObj.isRemote && getItem().isItemEnchanted())
+					for (int i = 0; i < 3; i++)
+						if (RAND.nextInt(4) == 0)
+							worldObj.spawnParticle("magicCrit",
+									posX + motionX * i / 3.0, 
+									posY + motionY * i / 3.0,
+									posZ + motionZ * i / 3.0,
+									-motionX, -motionY + 0.2D, -motionZ);
 			}
 			else
 				setAfterHit(getAfterHit() + 1);
@@ -390,17 +389,22 @@ public class EntityTomahawk extends AbstractTomahawk {
 			setAfterHit(0);
 		}
 		else {
-			float angle = getRotation() + 45;
-			if (mop.sideHit == DOWN.ordinal())
-				angle += 90 * (getIsForwardSpin() ? 1 : -1);
-			else if (mop.sideHit == UP.ordinal())
-				angle -= 90 * (getIsForwardSpin() ? 1 : -1);
+			boolean setInGround = getState() != ON_GROUND;
 			
-			if (!worldObj.isRemote)
-				phy4j().debug("Collision angle: %s", angle);
+			if (setInGround) {
+				float angle = getRotation() + 45;
+				if (mop.sideHit == DOWN.ordinal())
+					angle += 90 * (getIsForwardSpin() ? 1 : -1);
+				else if (mop.sideHit == UP.ordinal())
+					angle -= 90 * (getIsForwardSpin() ? 1 : -1);
+				
+				setInGround = ANGLE_RANGE.contains(modAngle(angle));
+			}
 			
-			if (ANGLE_RANGE.contains(modAngle(angle)))
+			if (setInGround) {
 				super.onImpact(mop);
+				setIsCritical(false);
+			}
 			else {
 				ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
 				mop.hitInfo = worldObj.getWorldVec3Pool().getVecFromPool(
@@ -409,8 +413,10 @@ public class EntityTomahawk extends AbstractTomahawk {
 				rebounce(mop, getReactFactorOnBlock(), false);
 				
 				double v2 = motionX * motionX + motionY * motionY + motionZ * motionZ;
-				if (v2 < 1/9D)
+				if (v2 < 1/9D) {
 					setState(NO_REBOUNCE);
+					setIsCritical(false);
+				}
 				
 				Block block = worldObj.getBlock(mop.blockX, mop.blockY, mop.blockZ);
 				playHitSound(false, block,
@@ -422,41 +428,45 @@ public class EntityTomahawk extends AbstractTomahawk {
 	private static final Range<Float> ANGLE_RANGE = Range.closed(
 			atan(4/9D) * 180 / PI - 45, 180 - atan(2) * 180 / PI);
 	
-	
-	@Override protected void onMotionTick(float hv, float v, float resistance) {
-		super.onMotionTick(hv, v, resistance);
-		
+	@Override protected void onMotionTick(float vH, float v, float resistance) {
+		super.onMotionTick(vH, v, resistance);
+
 		if (getState() != ON_GROUND) {
-			float r = 0.018F * getSpinFactor(true);
+			float k = getSpinMotionFactor() * getSpinFactor(true);
+			double wH = -k * motionY;
 			
-			double hr = 1 - r * motionY / v;
-			motionX *= hr;
-			motionY *= 1 + Math.signum(motionY) * r * hv / v;
-			motionZ *= hr;
+			motionX += sin(rotationYaw * (PI / 180)) * wH;
+			motionY += k * vH;
+			motionZ += -cos(rotationYaw * (PI / 180)) * wH;
+				
 		}
 		
 	}
 	
+	@Override protected void rebounce(MovingObjectPosition mop, double reactFactor, boolean onEntity) {
+		float p = rotationYaw;
+		super.rebounce(mop, reactFactor, onEntity);
+		if (modAngle(rotationYaw - p - 90) >= 0)
+			setIsForwardSpin(!getIsForwardSpin());
+	}
+	
 	@Override protected void onRebounce(MovingObjectPosition mop, double nY, double n, double react) {
-		phy4j().debug("%s: react = %s", "onRebounce", react);
+		double w = react * getSpinReactFactor() * getSpinFactor(true);
+		double wH = w * nY / n;
+		double wY = w * sqrt(n * n - nY * nY) / n;
 		
-		double r = react * getSpinReactFactor() * getSpinFactor(true);
-		
-		double hr = 1 - r * nY / n;
-		double vr = 1 + Math.signum(motionY) * r * Math.sqrt(n * n - nY * nY) / n;
-		motionX *= hr;
-		motionY *= vr;
-		motionZ *= hr;
+		double wX = sin(rotationYaw * (PI / 180)) * wH;
+		double wZ = cos(rotationYaw * (PI / 180)) * wH;
+		motionX += wX;
+		motionY += wY;
+		motionZ += wZ;
 		
 		if (mop.entityHit != null) {
-			double har = -0.02 * (hr - 1) / hr;
-			
-			mop.entityHit.motionX += har * motionX;
-			mop.entityHit.motionY += -0.02 * (vr - 1) / vr * motionY;
-			mop.entityHit.motionZ += har * motionZ;
+			mop.entityHit.motionX -= 0.02 * wX;
+			mop.entityHit.motionY -= 0.02 * wY;
+			mop.entityHit.motionZ -= 0.02 * wZ;
 		}
 		
-		setIsForwardSpin(!getIsForwardSpin());
 		setRotation(modAngle(getRotation() + 180));
 	}
 	
@@ -493,18 +503,22 @@ public class EntityTomahawk extends AbstractTomahawk {
 				* (!isSignApplicable || getIsForwardSpin() ? 1 : -1);
 	}
 	
+	protected float getSpinMotionFactor() {
+		return 0.03F;
+	}
+	
 	protected double getReactFactor() {
-		return 0.39;
+		return 0.31;
 	}
 	
 	protected double getReactFactorOnBlock() {
-		return 0.21;
+		return 0.24;
 	}
 	
 	protected double getSpinReactFactor() {
-		return 4.00;
+		return 3.45;
 	}
 	
-	protected static final float INITIAL_SPEED = 1.5F;
+	protected static final float INITIAL_SPEED = 2.11F;
 
 }

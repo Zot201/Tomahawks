@@ -1,7 +1,6 @@
 package zotmc.tomahawk.projectile;
 
 import static net.minecraft.util.MathHelper.clamp_float;
-import static net.minecraft.util.MathHelper.floor_double;
 import static net.minecraft.util.MovingObjectPosition.MovingObjectType.BLOCK;
 import static net.minecraftforge.common.util.ForgeDirection.DOWN;
 import static net.minecraftforge.common.util.ForgeDirection.UP;
@@ -10,6 +9,7 @@ import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_GROUND;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.ON_GROUND;
 import static zotmc.tomahawk.util.Utils.PI;
 import static zotmc.tomahawk.util.Utils.atan2;
+import static zotmc.tomahawk.util.Utils.floor;
 import static zotmc.tomahawk.util.Utils.sqrt;
 
 import java.lang.reflect.Field;
@@ -19,6 +19,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
@@ -26,6 +27,8 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
+import zotmc.tomahawk.PositionTracker;
 import zotmc.tomahawk.util.FieldAccess;
 import zotmc.tomahawk.util.Obfs;
 
@@ -69,12 +72,29 @@ public abstract class AbstractTomahawk extends EntityArrow {
 	}
 	public AbstractTomahawk(World world, double x, double y, double z, float initialSpeed) {
 		super(world, x, y, z);
-		setSize(0.5F, 0.75F);
-		setThrowableHeading(motionX, motionY, motionZ, initialSpeed * 1.5F, 1);
+		setThrowableHeading(motionX, motionY, motionZ, initialSpeed, 1);
 	}
 	public AbstractTomahawk(World world, EntityLivingBase thrower, float initialSpeed) {
-		super(world, thrower, initialSpeed);
-		setSize(0.5F, 0.75F);
+		super(world, thrower, initialSpeed / 1.5F);
+		
+		if (!world.isRemote) {
+			if (thrower instanceof EntityPlayer) {
+				double[] m = PositionTracker
+						.get((EntityPlayer) thrower)
+						.getCurrentMotion();
+				
+				motionX += m[0];
+				motionY += m[1];
+				motionZ += m[2];
+			}
+			else {
+				motionX += thrower.motionX;
+				motionY += thrower.motionY;
+				motionZ += thrower.motionZ;
+			}
+			
+			setThrowableHeading(motionX, motionY, motionZ, initialSpeed, 1);
+		}
 	}
 	
 	@Override protected void entityInit() {
@@ -130,6 +150,17 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		return false;
 	}
 	
+	protected void releaseToAir() {
+		setState(IN_AIR);
+		motionX *= rand.nextFloat() * 0.2F;
+		motionY *= rand.nextFloat() * 0.2F;
+		motionZ *= rand.nextFloat() * 0.2F;
+		ticksInGround.set(0);
+		ticksInAir.set(0);
+		
+		updateRotationYaw();
+	}
+	
 	@Override public void onEntityUpdate() {
 		lastTickPosX = posX;
 		lastTickPosY = posY;
@@ -137,54 +168,95 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		
 		super.onEntityUpdate();
 		
-		/*
-		if (arrowShake > 0)
-			--arrowShake;
-		*/
-		
 		
 		switch (getState()) {
 		case IN_GROUND:
 			if (worldObj.getBlock(x.get(), y.get(), z.get()) == ground.get()) {
-				ticksInGround.set(ticksInGround.get() + 1);
+				int tick = ticksInGround.get() + 1;
+				if (worldObj.isRemote && tick == 1)
+					setPosition(posX, posY, posZ);
+				ticksInGround.set(tick);
 				
 				onLifespanTick(getLifespan());
+				
+				return;
+			}
+			
+			releaseToAir();
+			break;
+
+		case ON_GROUND:
+			Block block = worldObj.getBlock(floor(posX), floor(posY) - 1, floor(posZ));
+			if (block.getMaterial() != Material.air) {
+				
+				/*if (motionX != 0 || motionZ != 0) {
+					MovingObjectPosition mop = getBlockCollision(worldObj, posX, posY, posZ, motionX, 0, motionZ);
+					if (mop != null)
+						onImpact(mop);
+					
+					posX += motionX;
+					posZ += motionZ;
+					
+					double vH2 = motionX * motionX + motionZ * motionZ;
+					double v2 = vH2 + motionY * motionY;
+					onMotionTick(sqrt(vH2), sqrt(v2), block.slipperiness * 0.98F);
+					motionY = 0;
+				}
+				else*/ {
+					ticksInGround.set(ticksInGround.get() + 1);
+					onLifespanTick(getLifespan());
+				}
+				
 				return;
 			}
 
-			setState(IN_AIR);
-			motionX *= rand.nextFloat() * 0.2F;
-			motionY *= rand.nextFloat() * 0.2F;
-			motionZ *= rand.nextFloat() * 0.2F;
-			ticksInGround.set(0);
-			ticksInAir.set(0);
-			
+			releaseToAir();
 			break;
 			
 		case NO_REBOUNCE:
-			if (onGround)
-				setState(ON_GROUND);
-			
 			ticksInAir.set(ticksInAir.get() + 1);
-			
-		case ON_GROUND:
-			ticksInGround.set(ticksInGround.get() + 1);
-			if (onLifespanTick(getLifespan()))
-				return;
-			
-			double hv2 = motionX * motionX + motionZ * motionZ;
-			double v2 = hv2 + motionY * motionY;
-			float resistance = !onGround ? getDragFactor() : worldObj
-					.getBlock(floor_double(posX), floor_double(boundingBox.minY) - 1, floor_double(posZ))
-					.slipperiness * 0.98F;
-			
-			onMotionTick(sqrt(hv2), sqrt(v2), resistance);
-			
-			noClip = func_145771_j(posX, (boundingBox.minY + boundingBox.maxY) / 2.0D, posZ);
-			moveEntity(motionX, motionY, motionZ);
 
-			if (onGround)
-				this.motionY *= -0.5D;
+			MovingObjectPosition mop = getBlockCollision(
+					worldObj, posX, posY, posZ, motionX, motionY, motionZ);
+			if (mop != null) {
+				posX = mop.hitVec.xCoord;
+				posY = mop.hitVec.yCoord;
+				posZ = mop.hitVec.zCoord;
+				
+				switch(ForgeDirection.getOrientation(mop.sideHit)) {
+				case UP:
+					setState(ON_GROUND);
+				case DOWN:
+					motionY = 0;
+					break;
+					
+				case EAST:
+				case WEST:
+					motionX = 0;
+					break;
+					
+				case NORTH:
+				case SOUTH:
+					motionZ = 0;
+					break;
+					
+				default:
+					break;
+				}
+				
+				if (Math.abs(motionX) < 0.1 && Math.abs(motionY) < 0.1 && Math.abs(motionZ) < 0.1)
+					setState(ON_GROUND);
+				
+				return;
+			}
+			
+			posX += motionX;
+			posY += motionY;
+			posZ += motionZ;
+			
+			double vH2 = motionX * motionX + motionZ * motionZ;
+			double v2 = vH2 + motionY * motionY;
+			onMotionTick(sqrt(vH2), sqrt(v2), getDragFactor());
 			
 			setPosition(posX, posY, posZ);
 			func_145775_I();
@@ -197,20 +269,15 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		}
 		
 		
+		MovingObjectPosition mop = getBlockCollision(
+				worldObj, posX, posY, posZ, motionX, motionY, motionZ);
+
 		Vec3 pos = worldObj.getWorldVec3Pool().getVecFromPool(posX, posY, posZ);
-		Vec3 pos1 = worldObj.getWorldVec3Pool().getVecFromPool(
-				posX + motionX, posY + motionY, posZ + motionZ);
-		
-		MovingObjectPosition mop = worldObj.func_147447_a(pos, pos1, false, true, false);
-		
-		pos = worldObj.getWorldVec3Pool().getVecFromPool(posX, posY, posZ);
-		pos1 = worldObj.getWorldVec3Pool().getVecFromPool(
-				posX + motionX, posY + motionY, posZ + motionZ);
-		
-		if (mop != null)
-			pos1 = worldObj.getWorldVec3Pool().getVecFromPool(
-					mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
-		
+		Vec3 pos1 = mop != null ?
+				worldObj.getWorldVec3Pool().getVecFromPool(
+						mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord) :
+				worldObj.getWorldVec3Pool().getVecFromPool(
+						posX + motionX, posY + motionY, posZ + motionZ);
 
 		if (!worldObj.isRemote) {
 			
@@ -219,7 +286,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			
 			@SuppressWarnings("unchecked")
 			List<Entity> onTrack = worldObj.getEntitiesWithinAABBExcludingEntity(
-					this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1, 1, 1));
+					this, boundingBox.addCoord(motionX, motionY, motionZ).expand(1.25, 1.5, 1.25));
 			
 			double min = 0;
 			Entity thrower = getThrower();
@@ -252,45 +319,43 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		}
 		
 		if (mop != null)
-			/*
-			if (mop.typeOfHit == BLOCK
-					&& worldObj.getBlock(mop.blockX, mop.blockY, mop.blockZ) == Blocks.portal)
-				setInPortal();
-			else
-				*/
-				onImpact(mop);
+			onImpact(mop);
 		
 		
 		posX += motionX;
 		posY += motionY;
 		posZ += motionZ;
 		
-		float hv = sqrt(motionX * motionX + motionZ * motionZ);
-		rotationYaw = atan2(motionX, motionZ) * 180 / PI;
-		
-		for (rotationPitch = atan2(motionY, hv) * 180 / PI;
-				rotationPitch - prevRotationPitch < -180;
-				prevRotationPitch -= 360.0F);
-		
-		while (rotationPitch - prevRotationPitch >= 180)
-			prevRotationPitch += 360;
-		
-		while (rotationYaw - prevRotationYaw < -180)
-			prevRotationYaw -= 360;
-		
-		while (rotationYaw - prevRotationYaw >= 180)
-			prevRotationYaw += 360;
-		
-		rotationPitch = prevRotationPitch + (rotationPitch - prevRotationPitch) * 0.2F;
-		rotationYaw = prevRotationYaw + (rotationYaw - prevRotationYaw) * 0.2F;
-		
-		
-		float v = sqrt(hv * hv + motionY * motionY);
-		onMotionTick(hv, v, getDragFactor());
+		double vH2 = motionX * motionX + motionZ * motionZ;
+		double v2 = vH2 + motionY * motionY;
+		onMotionTick(sqrt(vH2), sqrt(v2), getDragFactor());
 		
 		setPosition(posX, posY, posZ);
 		func_145775_I();
 		
+	}
+	
+	protected static float modAngle(float rotation) {
+		if (rotation < 0)
+			for (; rotation < -180; rotation += 360);
+		else
+			for (; rotation >= 180; rotation -= 360);
+		return rotation;
+	}
+	
+	public void updateRotationYaw() {
+		rotationYaw = modAngle(atan2(motionX, motionZ) * 180 / PI);
+	}
+	
+	public static MovingObjectPosition getBlockCollision(World world,
+			double posX, double posY, double posZ,
+			double motionX, double motionY, double motionZ) {
+		
+		Vec3 pos = world.getWorldVec3Pool().getVecFromPool(posX, posY, posZ);
+		Vec3 pos1 = world.getWorldVec3Pool().getVecFromPool(
+				posX + motionX, posY + motionY, posZ + motionZ);
+		
+		return world.func_147447_a(pos, pos1, false, true, false);
 	}
 	
 	public static MovingObjectPosition calculateIntercept(World world, AxisAlignedBB aabb, Vec3 a, Vec3 b) {
@@ -301,31 +366,30 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		
 		if (ret != null) {
 			Vec3 normal;
+			
 			if (ret.sideHit == UP.ordinal())
 				normal = world.getWorldVec3Pool().getVecFromPool(0, 1, 0);
 			else if (ret.sideHit == DOWN.ordinal())
 				normal = world.getWorldVec3Pool().getVecFromPool(0, -1, 0);
 			else {
-				Vec3 hba = world.getWorldVec3Pool()
-						.getVecFromPool(
-								a.xCoord - b.xCoord,
-								0,
-								a.zCoord - b.zCoord)
-						.normalize();
+				double x = ret.hitVec.xCoord
+						- (aabb.minX + aabb.maxX) / 2;
+				double z = ret.hitVec.zCoord
+						- (aabb.minZ + aabb.maxZ) / 2;
+				double r = sqrt(x * x + z * z);
 				
-				normal = ret.hitVec
-						.addVector(
-								-(aabb.minX + aabb.maxX) / 2,
-								-ret.hitVec.yCoord,
-								-(aabb.minZ + aabb.maxZ) / 2)
-						.normalize();
+				double x1 = a.xCoord - b.xCoord;
+				double z1 = a.zCoord - b.zCoord;
+				double r1 = sqrt(x1 * x1 + z1 * z1);
 				
-				normal = normal
-					.addVector(
-							hba.xCoord * 2.5,
-							0,
-							hba.zCoord * 2.5)
-					.normalize();
+				x = x / r + x1 / r1;
+				z = z / r + z1 / r1;
+				r = sqrt(x * x + z * z);
+				
+				normal = world.getWorldVec3Pool().getVecFromPool(
+						x / r,
+						0,
+						z / r);
 			}
 			
 			ret.hitInfo = normal;
@@ -334,7 +398,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		return ret;
 	}
 	
-	protected void onMotionTick(float hv, float v, float resistense) {
+	protected void onMotionTick(float vH, float v, float resistense) {
 		float r = MathHelper.clamp_float(1 - resistense / v, 0, 1);
 		float g = getGravity();
 
@@ -367,8 +431,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			motionX = mop.hitVec.xCoord - posX;
 			motionY = mop.hitVec.yCoord - posY;
 			motionZ = mop.hitVec.zCoord - posZ;
-			double v2 = motionX * motionX + motionY * motionY + motionZ * motionZ;
-			float v = sqrt(v2);
+			float v = sqrt(motionX * motionX + motionY * motionY + motionZ * motionZ);
 			posX -= motionX / v * 0.05;
 			posY -= motionY / v * 0.05;
 			posZ -= motionZ / v * 0.05;
@@ -403,17 +466,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 	
 	
 	protected void rebounce(MovingObjectPosition mop, double reactFactor, boolean onEntity) {
-		if (onEntity) {
-			posX += motionX;
-			posY += motionY;
-			posZ += motionZ;
-		}
-		
 		Vec3 nVec = (Vec3) mop.hitInfo;
-		/*
-		if (!worldObj.isRemote)
-			phy4j().debug("Rebounce normal: %s", nVec);
-		*/
 		
 		Vec3 vVec = worldObj.getWorldVec3Pool().getVecFromPool(motionX, motionY, motionZ);
 		
@@ -424,6 +477,19 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		motionY = reactFactor * (motionY - r * nVec.yCoord);
 		motionZ = reactFactor * (motionZ - r * nVec.zCoord);
 		
+		double
+		pX = mop.hitVec.xCoord + motionX * 0.05,
+		pY = mop.hitVec.yCoord + motionY * 0.05,
+		pZ = mop.hitVec.zCoord + motionZ * 0.05;
+		
+		MovingObjectPosition mop1 = getBlockCollision(worldObj, posX, posY, posZ,
+				pX - posX, pY - posY, pZ - posZ);
+		
+		if (mop1 != null)
+			onImpact(mop1);
+		
+		updateRotationYaw();
+		
 	}
 	
 	protected abstract void onRebounce(MovingObjectPosition mop, double nY, double n, double react);
@@ -431,11 +497,11 @@ public abstract class AbstractTomahawk extends EntityArrow {
 	
 	
 	protected float getDragFactor() {
-		return 0.0375F;
+		return 0.06F;
 	}
 	
 	protected float getGravity() {
-		return 0.1200F;
+		return 0.12F;
 	}
 	
 }

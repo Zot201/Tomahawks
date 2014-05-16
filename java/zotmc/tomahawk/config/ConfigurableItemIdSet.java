@@ -7,6 +7,7 @@ import java.util.Set;
 import net.minecraft.item.Item;
 import net.minecraftforge.common.config.Configuration;
 import zotmc.tomahawk.util.TransformedSet;
+import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -15,8 +16,6 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
-import cpw.mods.fml.common.registry.GameData;
 
 public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, String> {
 
@@ -49,13 +48,13 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 		
 		private final Function<Item, String> toString = new Function<Item, String>() {
 			@Override public String apply(Item input) {
-				return GameData.getItemRegistry().getNameForObject(input);
+				return Utils.getItemRegistry().getNameForObject(input);
 			}
 		};
 		
 		private final Function<String, Item> valueOf = new Function<String, Item>() {
 			@Override public Item apply(String input) {
-				return GameData.getItemRegistry().getRaw(input);
+				return Utils.getItemRegistry().getRaw(input);
 			}
 		};
 		

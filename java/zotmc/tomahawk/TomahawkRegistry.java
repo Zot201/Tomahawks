@@ -5,13 +5,9 @@ import java.util.Queue;
 import java.util.Set;
 
 import net.minecraft.block.Block.SoundType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityLiving;
-import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
-import zotmc.tomahawk.ai.AITomahawkThrowing;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.util.Utils;
 
@@ -27,9 +23,6 @@ import cpw.mods.fml.common.ModContainer;
 public class TomahawkRegistry {
 	
 	//Feel free to access these fields through reflection, their names are remaining unchanged unless stated.
-	private static final Map<Class<? extends EntityLiving>, Function<EntityLiving, EntityAITasks>>
-	throwerAIFactories = Maps.newIdentityHashMap();
-	
 	private static final Queue<Predicate<Item>> throwableAxes = Queues.newArrayDeque();
 	private static final Set<Item> throwableAxesCache = Sets.newIdentityHashSet();
 	
@@ -40,11 +33,6 @@ public class TomahawkRegistry {
 	private static final Set<ModContainer> damageFakings = Sets.newIdentityHashSet();
 	
 	
-	
-	public static void registerThrowerAIFactory(Class<? extends EntityLiving> living,
-			Function<EntityLiving, EntityAITasks> aiFactory) {
-		throwerAIFactories.put(living, (Function<EntityLiving, EntityAITasks>) aiFactory);
-	}
 	
 	public static void registerThrowableAxes(Predicate<Item> isThrowableAxe) {
 		throwableAxes.add((Predicate<Item>) isThrowableAxe);
@@ -59,16 +47,6 @@ public class TomahawkRegistry {
 	}
 	
 	
-	
-	public static EntityAITasks getThrowerAITasks(Entity entity) {
-		Function<EntityLiving, EntityAITasks> factory = throwerAIFactories.get(entity.getClass());
-		if (factory != null)
-			return factory.apply((EntityLiving) entity);
-		
-		EntityAITasks tasks = new EntityAITasks(entity.worldObj.theProfiler);
-		tasks.addTask(0, new AITomahawkThrowing(false, (EntityLiving) entity));
-		return tasks;
-	}
 	
 	public static boolean isThrowableAxe(Item item) {
 		return throwableAxesCache.contains(item);

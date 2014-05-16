@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import zotmc.tomahawk.projectile.TomahawkDamage;
 import zotmc.tomahawk.util.ListenerArrayList;
@@ -20,10 +21,11 @@ import com.google.common.collect.FluentIterable;
 import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.eventhandler.ASMEventHandler;
 import cpw.mods.fml.common.eventhandler.Event;
+import cpw.mods.fml.common.eventhandler.EventBus;
 import cpw.mods.fml.common.eventhandler.IEventListener;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
-public class DamageFaker {
+public class DamageFaker extends EventBus {
 	
 	private final Predicate<ASMEventHandler> isTarget = new Predicate<ASMEventHandler>() {
 		final Field OWNER = Refls.getDeclaredField(ASMEventHandler.class, "owner");
@@ -56,11 +58,12 @@ public class DamageFaker {
 	@SubscribeEvent(priority = HIGHEST)
 	public void onLivingAttack(LivingAttackEvent event) {
 		if (event.entityLiving.worldObj instanceof WorldServer
-				&& event.source instanceof TomahawkDamage) {
+				&& event.source.getClass() == TomahawkDamage.class) {
 			
 			LivingAttackEvent fakingEvent = new LivingAttackEvent(
 					event.entityLiving,
-					((TomahawkDamage) event.source).faking((WorldServer) event.entityLiving.worldObj),
+					((TomahawkDamage) event.source)
+						.faking((WorldServer) event.entityLiving.worldObj),
 					event.ammount);
 			
 			for (IEventListener listener : livingAttackListeners)
@@ -73,11 +76,12 @@ public class DamageFaker {
 	@SubscribeEvent(priority = HIGHEST)
 	public void onLivingHurt(LivingHurtEvent event) {
 		if (event.entityLiving.worldObj instanceof WorldServer
-				&& event.source instanceof TomahawkDamage) {
+				&& event.source.getClass() == TomahawkDamage.class) {
 			
 			LivingHurtEvent fakingEvent = new LivingHurtEvent(
 					event.entityLiving,
-					((TomahawkDamage) event.source).faking((WorldServer) event.entityLiving.worldObj),
+					((TomahawkDamage) event.source)
+						.faking((WorldServer) event.entityLiving.worldObj),
 					event.ammount);
 			
 			for (IEventListener listener : livingHurtListeners)
@@ -86,6 +90,21 @@ public class DamageFaker {
 			event.ammount = fakingEvent.ammount;
 			
 		}
+		
+	}
+	
+	@SubscribeEvent(priority = HIGHEST)
+	public void onLivingDrops(LivingDropsEvent event) {
+		if (event.entityLiving.worldObj instanceof WorldServer
+				&& event.source.getClass() == TomahawkDamage.class)
+			post(new LivingDropsEvent(
+					event.entityLiving,
+					((TomahawkDamage) event.source)
+						.faking((WorldServer) event.entityLiving.worldObj),
+					event.drops,
+					event.lootingLevel,
+					event.recentlyHit,
+					event.specialDropValue));
 		
 	}
 	

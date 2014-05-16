@@ -10,7 +10,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Splitter;
 
-import cpw.mods.fml.common.registry.GameData;
+import cpw.mods.fml.common.registry.FMLControlledNamespacedRegistry;
 
 public class Utils {
 	
@@ -26,17 +26,23 @@ public class Utils {
 					attacker, new S0BPacketAnimation(victim, 5));
 	}
 	
-
+	
 	
 	@SuppressWarnings("unchecked")
 	public static Iterable<Item> itemList() {
-		return GameData.getItemRegistry();
+		return getItemRegistry();
+	}
+	
+	//temporary
+	@SuppressWarnings("unchecked")
+	public static FMLControlledNamespacedRegistry<Item> getItemRegistry() {
+		return (FMLControlledNamespacedRegistry<Item>) Item.itemRegistry;
 	}
 	
 	private static final Splitter COLON = Splitter.on(':').limit(2);
 	
 	public static String getModid(Item item) {
-		return COLON.split(GameData.getItemRegistry().getNameForObject(item))
+		return COLON.split(getItemRegistry().getNameForObject(item))
 				.iterator()
 				.next();
 	}
@@ -56,9 +62,15 @@ public class Utils {
 	public static float sqrt(double a) {
 		return MathHelper.sqrt_double(a);
 	}
-	
 	public static float sqrt(float a) {
 		return MathHelper.sqrt_float(a);
+	}
+	
+	public static int floor(double a) {
+		return MathHelper.floor_double(a);
+	}
+	public static int floor(float a) {
+		return MathHelper.floor_float(a);
 	}
 	
 	

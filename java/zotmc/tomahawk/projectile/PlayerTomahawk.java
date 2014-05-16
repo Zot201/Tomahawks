@@ -39,6 +39,9 @@ public class PlayerTomahawk extends FakePlayer {
 			ridingEntity = null;
 		}
 		
+		if (tomahawk.isBurning())
+			setFire(5);
+		
 	}
 	
 	@Override public ItemStack getHeldItem() {
@@ -46,7 +49,7 @@ public class PlayerTomahawk extends FakePlayer {
 	}
 	
 	@Override public ItemStack getCurrentEquippedItem() {
-		return tomahawk.getItem();
+		return getHeldItem();
 	}
 	
 	@Override public void setCurrentItemOrArmor(int slot, ItemStack item) {

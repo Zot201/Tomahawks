@@ -17,6 +17,9 @@ public class TomahawkDamage extends EntityDamageSourceIndirect {
 	public TomahawkDamage(EntityTomahawk tomahawk, Entity attacker) {
 		super("thrown", tomahawk, attacker);
 	}
+	private TomahawkDamage(String damageType, Entity tomahawk, Entity attacker) {
+		super(damageType, tomahawk, attacker);
+	}
 	
 	public DamageSource faking(WorldServer world) {
 		EntityTomahawk tomahawk = (EntityTomahawk) getSourceOfDamage();
@@ -29,7 +32,7 @@ public class TomahawkDamage extends EntityDamageSourceIndirect {
 	}
 	
 	
-	private static class Faking extends EntityDamageSourceIndirect {
+	private static class Faking extends TomahawkDamage {
 		
 		private Faking(PlayerTomahawk fakePlayer) {
 			super("player", fakePlayer, fakePlayer);
