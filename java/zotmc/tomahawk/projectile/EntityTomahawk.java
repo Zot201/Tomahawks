@@ -78,7 +78,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 	float damageAttr;
 	int knockbackStr;
 	
-	public WeakReference<PlayerTomahawk> fakePlayer;
+	public WeakReference<PlayerTomahawk> fakePlayer = new WeakReference<PlayerTomahawk>(null);
 	
 	public EntityTomahawk(World world) {
 		super(world);
@@ -219,11 +219,6 @@ public class EntityTomahawk extends AbstractTomahawk {
 	}
 	
 	@Override public void onUpdate() {
-		/*
-		pro4j().debug("EntityTomahawk.%s [%s at (%.0f, %.0f, %.0f)]",
-				"onUpdate", getItem(), posX, posY, posZ);
-		*/
-		
 		super.onUpdate();
 		
 		if (getState() == IN_AIR || getState() == NO_REBOUNCE) {
@@ -402,6 +397,15 @@ public class EntityTomahawk extends AbstractTomahawk {
 			}
 			
 			if (setInGround) {
+				ItemStack item = getItem();
+				if (item != null && worldObj instanceof WorldServer) {
+					PlayerTomahawk fakePlayer = new PlayerTomahawk((WorldServer) worldObj, this);
+					
+					item.getItem().onBlockStartBreak(item, mop.blockX, mop.blockY, mop.blockZ, fakePlayer);
+					
+					this.fakePlayer = new WeakReference<PlayerTomahawk>(fakePlayer);
+				}
+				
 				super.onImpact(mop);
 				setIsCritical(false);
 			}
@@ -434,10 +438,23 @@ public class EntityTomahawk extends AbstractTomahawk {
 		if (getState() != ON_GROUND) {
 			float k = getSpinMotionFactor() * getSpinFactor(true);
 			double wH = -k * motionY;
+			double wY = k * vH;
+
+			double r = motionZ / motionX;
+			double wX;
+			double wZ;
+			if (!Double.isNaN(r)) {
+				wX = wH / sqrt(1 + r * r);
+				wZ = r * wX;
+			}
+			else {
+				wX = sin(rotationYaw * (PI / 180)) * wH;
+				wZ = cos(rotationYaw * (PI / 180)) * wH;
+			}
 			
-			motionX += sin(rotationYaw * (PI / 180)) * wH;
-			motionY += k * vH;
-			motionZ += -cos(rotationYaw * (PI / 180)) * wH;
+			motionX += wX;
+			motionY += wY;
+			motionZ += wZ;
 				
 		}
 		
@@ -445,18 +462,32 @@ public class EntityTomahawk extends AbstractTomahawk {
 	
 	@Override protected void rebounce(MovingObjectPosition mop, double reactFactor, boolean onEntity) {
 		float p = rotationYaw;
+		
 		super.rebounce(mop, reactFactor, onEntity);
-		if (modAngle(rotationYaw - p - 90) >= 0)
+		
+		if (modAngle(rotationYaw - p - 90) >= 0) {
 			setIsForwardSpin(!getIsForwardSpin());
+			setRotation(modAngle(getRotation() + 180));
+		}
 	}
 	
 	@Override protected void onRebounce(MovingObjectPosition mop, double nY, double n, double react) {
 		double w = react * getSpinReactFactor() * getSpinFactor(true);
 		double wH = w * nY / n;
 		double wY = w * sqrt(n * n - nY * nY) / n;
+
+		double r = motionZ / motionX;
+		double wX;
+		double wZ;
+		if (!Double.isNaN(r)) {
+			wX = wH / sqrt(1 + r * r);
+			wZ = r * wX;
+		}
+		else {
+			wX = sin(rotationYaw * (PI / 180)) * wH;
+			wZ = cos(rotationYaw * (PI / 180)) * wH;
+		}
 		
-		double wX = sin(rotationYaw * (PI / 180)) * wH;
-		double wZ = cos(rotationYaw * (PI / 180)) * wH;
 		motionX += wX;
 		motionY += wY;
 		motionZ += wZ;
@@ -467,7 +498,6 @@ public class EntityTomahawk extends AbstractTomahawk {
 			mop.entityHit.motionZ -= 0.02 * wZ;
 		}
 		
-		setRotation(modAngle(getRotation() + 180));
 	}
 	
 	

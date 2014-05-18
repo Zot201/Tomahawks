@@ -54,7 +54,7 @@ import cpw.mods.fml.common.event.FMLServerStartedEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
-@Mod(modid = MODID, name = NAME, version = "1.2.2.0-1.7.2", guiFactory = GUI_FACTORY)
+@Mod(modid = MODID, name = NAME, version = "1.2.3.1-1.7.2", guiFactory = GUI_FACTORY)
 public class Tomahawk {
 	
 	public static final String
@@ -86,20 +86,29 @@ public class Tomahawk {
 	
 	@EventHandler public void init(FMLInitializationEvent event) {
 		MinecraftForge.EVENT_BUS.register(this);
-		//MinecraftForge.EVENT_BUS.register(new EventListener()); //temporary deactivated Mob AI
 		
 		proxy.registerRenderer();
 		
 		DispenserHandler.init();
 		
 		
+		
+		boolean fakeDamage = false;
+		
+		if (isModLoaded("AdditionalEnchantments"))
+			fakeDamage = true;
+		
 		if (isModLoaded("MoreEnchants")) {
 			TomahawkRegistry.registerDamageFaking(
 					FMLCommonHandler.instance().findContainerFor("MoreEnchants"));
 			
-			MinecraftForge.EVENT_BUS.register(damageFaker = new DamageFaker());
-			
+			fakeDamage = true;
 		}
+		
+		if (fakeDamage)
+			MinecraftForge.EVENT_BUS.register(damageFaker = new DamageFaker());
+		
+		
 		
 		if (isModLoaded("onlysilver"))
 			OnlySilverHandler.init();
@@ -137,20 +146,32 @@ public class Tomahawk {
 				});
 				
 				
-			} catch (ClassNotFoundException e) {
+			} catch (Throwable e) {
 				log.catching(e);
 			}
 		
 	}
 	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
-		
-		if (isModLoaded("MoreEnchants"))
-			for (Enchantment ench : Enchantment.enchantmentsList)
-				if (ench != null && ench.getClass().getName().equals(
-						"com.demoxin.minecraft.moreenchants.Enchantment_Vorpal"))
-					damageFaker.register(ench);
-		
+		if (damageFaker != null) {
+			if (isModLoaded("AdditionalEnchantments"))
+				try {
+					damageFaker.register(Class
+							.forName("ak.AdditionalEnchantments.VorpalEventHook")
+							.getConstructor()
+							.newInstance());
+					
+				} catch (Throwable e) {
+					log.catching(e);
+				}
+			
+			if (isModLoaded("MoreEnchants"))
+				for (Enchantment ench : Enchantment.enchantmentsList)
+					if (ench != null && ench.getClass().getName().equals(
+							"com.demoxin.minecraft.moreenchants.Enchantment_Vorpal"))
+						damageFaker.register(ench);
+			
+		}
 		
 	}
 	

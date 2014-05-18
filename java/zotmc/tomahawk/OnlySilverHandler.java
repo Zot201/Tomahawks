@@ -37,8 +37,12 @@ public class OnlySilverHandler {
 						}
 						
 						@Override public void update(ItemStack item) {
-							if (item == null)
+							if (item == null) {
 								hawk.setDead();
+								
+								hawk.playSound("random.break",
+										0.8F, 0.8F + hawk.worldObj.rand.nextFloat() * 0.4F);
+							}
 							
 							if (item != hawk.getItem())
 								hawk.setItem(item);

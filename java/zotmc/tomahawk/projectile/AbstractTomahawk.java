@@ -139,6 +139,8 @@ public abstract class AbstractTomahawk extends EntityArrow {
 	
 	@Override public void onUpdate() {
 		onEntityUpdate();
+		setPosition(posX, posY, posZ);
+		
 	}
 	
 	protected boolean onLifespanTick(int lifespan) {
@@ -172,10 +174,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		switch (getState()) {
 		case IN_GROUND:
 			if (worldObj.getBlock(x.get(), y.get(), z.get()) == ground.get()) {
-				int tick = ticksInGround.get() + 1;
-				if (worldObj.isRemote && tick == 1)
-					setPosition(posX, posY, posZ);
-				ticksInGround.set(tick);
+				ticksInGround.set(ticksInGround.get() + 1);
 				
 				onLifespanTick(getLifespan());
 				
@@ -257,7 +256,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			double vH2 = motionX * motionX + motionZ * motionZ;
 			double v2 = vH2 + motionY * motionY;
 			onMotionTick(sqrt(vH2), sqrt(v2), getDragFactor());
-			
+
 			setPosition(posX, posY, posZ);
 			func_145775_I();
 			
@@ -426,7 +425,10 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			x.set(mop.blockX);
 			y.set(mop.blockY);
 			z.set(mop.blockZ);
-			ground.set(worldObj.getBlock(x.get(), y.get(), z.get()));
+			
+			Block b = worldObj.getBlock(x.get(), y.get(), z.get());
+			if (b != null)
+				ground.set(b);
 			
 			motionX = mop.hitVec.xCoord - posX;
 			motionY = mop.hitVec.yCoord - posY;
@@ -438,7 +440,8 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			
 			playHitSound(true, ground.get(),
 					ground.get().getBlockHardness(worldObj, x.get(), y.get(), z.get()));
-			setState(IN_GROUND);
+			if (b != null)
+				setState(IN_GROUND);
 			
 			if (ground.get().getMaterial() != Material.air)
 				ground.get().onEntityCollidedWithBlock(this.worldObj, x.get(), y.get(), z.get(), this);
