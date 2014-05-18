@@ -427,8 +427,7 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			z.set(mop.blockZ);
 			
 			Block b = worldObj.getBlock(x.get(), y.get(), z.get());
-			if (b != null)
-				ground.set(b);
+			ground.set(b);
 			
 			motionX = mop.hitVec.xCoord - posX;
 			motionY = mop.hitVec.yCoord - posY;
@@ -438,13 +437,12 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			posY -= motionY / v * 0.05;
 			posZ -= motionZ / v * 0.05;
 			
-			playHitSound(true, ground.get(),
-					ground.get().getBlockHardness(worldObj, x.get(), y.get(), z.get()));
-			if (b != null)
+			if (b.getMaterial() != Material.air) {
+				playHitSound(true, b, b.getBlockHardness(worldObj, x.get(), y.get(), z.get()));
 				setState(IN_GROUND);
-			
-			if (ground.get().getMaterial() != Material.air)
-				ground.get().onEntityCollidedWithBlock(this.worldObj, x.get(), y.get(), z.get(), this);
+				
+				b.onEntityCollidedWithBlock(this.worldObj, x.get(), y.get(), z.get(), this);
+			}
 			
 		}
 		
