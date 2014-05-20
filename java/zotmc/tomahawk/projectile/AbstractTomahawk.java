@@ -3,7 +3,12 @@ package zotmc.tomahawk.projectile;
 import static net.minecraft.util.MathHelper.clamp_float;
 import static net.minecraft.util.MovingObjectPosition.MovingObjectType.BLOCK;
 import static net.minecraftforge.common.util.ForgeDirection.DOWN;
+import static net.minecraftforge.common.util.ForgeDirection.EAST;
+import static net.minecraftforge.common.util.ForgeDirection.NORTH;
+import static net.minecraftforge.common.util.ForgeDirection.SOUTH;
 import static net.minecraftforge.common.util.ForgeDirection.UP;
+import static net.minecraftforge.common.util.ForgeDirection.WEST;
+import static zotmc.tomahawk.LogTomahawk.phy4j;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_AIR;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_GROUND;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.ON_GROUND;
@@ -72,10 +77,21 @@ public abstract class AbstractTomahawk extends EntityArrow {
 	}
 	public AbstractTomahawk(World world, double x, double y, double z, float initialSpeed) {
 		super(world, x, y, z);
+		setSize(0.8F, 1);
 		setThrowableHeading(motionX, motionY, motionZ, initialSpeed, 1);
 	}
 	public AbstractTomahawk(World world, EntityLivingBase thrower, float initialSpeed) {
 		super(world, thrower, initialSpeed / 1.5F);
+
+		setSize(0.8F, 1);
+        setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
+		
+		if (!world.isRemote) {
+			phy4j().debug("thrower: %s %s %s",
+					thrower.posX, thrower.posY, thrower.posZ);
+			phy4j().debug("axe: %s %s %s",
+					posX, posY, posZ);
+		}
 		
 		if (!world.isRemote) {
 			if (thrower instanceof EntityPlayer) {
@@ -95,6 +111,10 @@ public abstract class AbstractTomahawk extends EntityArrow {
 			
 			setThrowableHeading(motionX, motionY, motionZ, initialSpeed, 1);
 		}
+		
+		updateRotationYaw();
+		
+		
 	}
 	
 	@Override protected void entityInit() {
@@ -292,12 +312,17 @@ public abstract class AbstractTomahawk extends EntityArrow {
 
 			for (int i = 0; i < onTrack.size(); i++) {
 				Entity candidate = onTrack.get(i);
-				
+
 				if (candidate.isEntityAlive() && candidate.canBeCollidedWith()
 						&& (candidate != thrower || ticksInAir.get() >= 5)) {
-					float f = 0.3F;
-					AxisAlignedBB aabb = candidate.boundingBox.expand(f, f, f);
-					MovingObjectPosition intersect = calculateIntercept(worldObj, aabb, pos, pos1);
+					
+					AxisAlignedBB aabb = candidate.boundingBox.expand(0.4, 0.5, 0.4);
+					MovingObjectPosition intersect = calculateInterceptAdjusted(worldObj, aabb, pos, pos1);
+					
+					if (!(candidate instanceof EntityPlayer))
+						phy4j().debug("%s, %s",
+								aabb.isVecInside(pos),
+								intersect != null);
 					
 					if (intersect != null) {
 						double d = pos.distanceTo(intersect.hitVec);
@@ -357,11 +382,8 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		return world.func_147447_a(pos, pos1, false, true, false);
 	}
 	
-	public static MovingObjectPosition calculateIntercept(World world, AxisAlignedBB aabb, Vec3 a, Vec3 b) {
-		if (aabb.isVecInside(a))
-			return null;
-		
-		MovingObjectPosition ret = aabb.calculateIntercept(a, b);
+	private static MovingObjectPosition calculateInterceptAdjusted(World world, AxisAlignedBB aabb, Vec3 a, Vec3 b) {
+		MovingObjectPosition ret = calculateIntercept(world, aabb, a, b);
 		
 		if (ret != null) {
 			Vec3 normal;
@@ -381,8 +403,8 @@ public abstract class AbstractTomahawk extends EntityArrow {
 				double z1 = a.zCoord - b.zCoord;
 				double r1 = sqrt(x1 * x1 + z1 * z1);
 				
-				x = x / r + x1 / r1;
-				z = z / r + z1 / r1;
+				x = x / r * 2.5 + x1 / r1;
+				z = z / r * 2.5 + z1 / r1;
 				r = sqrt(x * x + z * z);
 				
 				normal = world.getWorldVec3Pool().getVecFromPool(
@@ -395,6 +417,111 @@ public abstract class AbstractTomahawk extends EntityArrow {
 		}
 		
 		return ret;
+	}
+	
+	private static MovingObjectPosition calculateIntercept(World world, AxisAlignedBB aabb, Vec3 a, Vec3 b) {
+		Vec3 x = getIntermediateWithXValue(world, a, b, b.xCoord < a.xCoord ? aabb.maxX : aabb.minX);
+		Vec3 y = getIntermediateWithYValue(world, a, b, b.yCoord < a.yCoord ? aabb.maxY : aabb.minY);
+		Vec3 z = getIntermediateWithZValue(world, a, b, b.zCoord < a.zCoord ? aabb.maxZ : aabb.minZ);
+
+		if (!aabb.isVecInside(a)) {
+			//phy4j().debug("%s %s %s %s", x, aabb, a, b);
+			if (x != null && (!isVecInY(aabb, x) || !isVecInZ(aabb, x)))
+				x = null;
+			if (y != null && (!isVecInX(aabb, y) || !isVecInZ(aabb, y)))
+				y = null;
+			if (z != null && (!isVecInX(aabb, z) || !isVecInY(aabb, z)))
+				z = null;
+		}
+		
+		Vec3 hit = null;
+		if (x != null && (hit == null || a.squareDistanceTo(x) < a.squareDistanceTo(hit)))
+			hit = x;
+		if (y != null && (hit == null || a.squareDistanceTo(y) < a.squareDistanceTo(hit)))
+			hit = y;
+		if (z != null && (hit == null || a.squareDistanceTo(z) < a.squareDistanceTo(hit)))
+			hit = z;
+		
+		if (hit != null) {
+			ForgeDirection face = null;
+			if (hit == x)
+				face = b.xCoord < a.xCoord ? EAST : WEST;
+			else if (hit == y)
+				face = b.yCoord < a.yCoord ? UP : DOWN;
+			else if (hit == z)
+				face = b.zCoord < a.zCoord ? SOUTH : NORTH;
+			
+			return new MovingObjectPosition(0, 0, 0, face.ordinal(), hit);
+		}
+		
+		return null;
+	}
+
+	private static boolean isVecInX(AxisAlignedBB aabb, Vec3 vec) {
+		return vec.xCoord >= aabb.minX && vec.xCoord <= aabb.maxX;
+	}
+	private static boolean isVecInY(AxisAlignedBB aabb, Vec3 vec) {
+		return vec.yCoord >= aabb.minY && vec.yCoord <= aabb.maxY;
+	}
+	private static boolean isVecInZ(AxisAlignedBB aabb, Vec3 vec) {
+		return vec.zCoord >= aabb.minZ && vec.zCoord <= aabb.maxZ;
+	}
+
+	private static Vec3 getIntermediateWithXValue(World world, Vec3 a, Vec3 b, double k) {
+		double x = b.xCoord - a.xCoord;
+		double y = b.yCoord - a.yCoord;
+		double z = b.zCoord - a.zCoord;
+		
+		double r = (k - a.xCoord) / x;
+		
+		if (!Double.isNaN(r)) {
+			x = k;
+			y = a.yCoord + y * r;
+			z = a.zCoord + z * r;
+			
+			if (!Double.isNaN(y) && !Double.isNaN(z))
+				return world.getWorldVec3Pool().getVecFromPool(x, y, z);
+		}
+		
+		return null;
+	}
+	private static Vec3 getIntermediateWithYValue(World world, Vec3 a, Vec3 b, double k) {
+		double x = b.xCoord - a.xCoord;
+		double y = b.yCoord - a.yCoord;
+		double z = b.zCoord - a.zCoord;
+		
+		double r = (k - a.yCoord) / y;
+		
+		if (!Double.isNaN(r)) {
+			x = a.xCoord + x * r;
+			y = k;
+			z = a.zCoord + z * r;
+			
+			if (!Double.isNaN(x) && !Double.isNaN(z))
+				return world.getWorldVec3Pool().getVecFromPool(x, y, z);
+		}
+		
+		return null;
+		
+	}
+	private static Vec3 getIntermediateWithZValue(World world, Vec3 a, Vec3 b, double k) {
+		double x = b.xCoord - a.xCoord;
+		double y = b.yCoord - a.yCoord;
+		double z = b.zCoord - a.zCoord;
+		
+		double r = (k - a.zCoord) / z;
+		
+		if (!Double.isNaN(r)) {
+			x = a.xCoord + x * r;
+			y = a.yCoord + y * r;
+			z = k;
+			
+			if (!Double.isNaN(x) && !Double.isNaN(y))
+				return world.getWorldVec3Pool().getVecFromPool(x, y, z);
+		}
+		
+		return null;
+		
 	}
 	
 	protected void onMotionTick(float vH, float v, float resistense) {

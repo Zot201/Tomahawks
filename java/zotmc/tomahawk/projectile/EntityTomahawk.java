@@ -6,8 +6,10 @@ import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
 import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
 import static net.minecraft.util.MathHelper.cos;
 import static net.minecraft.util.MathHelper.sin;
+import static net.minecraft.util.MovingObjectPosition.MovingObjectType.BLOCK;
 import static net.minecraftforge.common.util.ForgeDirection.DOWN;
 import static net.minecraftforge.common.util.ForgeDirection.UP;
+import static zotmc.tomahawk.LogTomahawk.phy4j;
 import static zotmc.tomahawk.LogTomahawk.pro4j;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_AIR;
 import static zotmc.tomahawk.projectile.AbstractTomahawk.State.NO_REBOUNCE;
@@ -35,12 +37,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import zotmc.tomahawk.Enchs;
+import zotmc.tomahawk.LogTomahawk;
 import zotmc.tomahawk.TomahawkRegistry;
 import zotmc.tomahawk.util.Utils;
 
@@ -183,7 +187,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 		switch (pickUpType) {
 		case SURVIVAL:
 			ItemStack item = getItem();
-			return item != null ? item.getItem().getEntityLifespan(item, worldObj) : 0;
+			return item != null ? item.getItem().getEntityLifespan(item, worldObj) : 120;
 		case ENCH:
 			return 120;
 		default:
@@ -194,7 +198,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 	
 	
 	public boolean readyForPickUp() {
-		return getState() != IN_AIR || getAfterHit() >= 8;
+		return getState() != IN_AIR || getAfterHit() >= 5;
 	}
 	
 	@Override public void onCollideWithPlayer(EntityPlayer player) {
@@ -383,7 +387,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 			
 			setAfterHit(0);
 		}
-		else {
+		else if (mop.typeOfHit == BLOCK) {
 			boolean setInGround = getState() != ON_GROUND;
 			
 			if (setInGround) {
@@ -534,11 +538,11 @@ public class EntityTomahawk extends AbstractTomahawk {
 	}
 	
 	protected float getSpinMotionFactor() {
-		return 0.03F;
+		return 0.02F;
 	}
 	
 	protected double getReactFactor() {
-		return 0.31;
+		return 0.27;
 	}
 	
 	protected double getReactFactorOnBlock() {
@@ -546,7 +550,7 @@ public class EntityTomahawk extends AbstractTomahawk {
 	}
 	
 	protected double getSpinReactFactor() {
-		return 3.45;
+		return 2.51;
 	}
 	
 	protected static final float INITIAL_SPEED = 2.11F;

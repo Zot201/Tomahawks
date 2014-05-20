@@ -12,7 +12,7 @@ public class PositionTracker implements IExtendedEntityProperties {
 	private static final String KEY = Tomahawk.MODID + ".postionTracker";
 	
 	private final EntityPlayer player;
-	private double[] p1, p2;
+	private double[] p1;
 	
 	public PositionTracker(EntityPlayer player) {
 		this.player = player;
@@ -41,9 +41,6 @@ public class PositionTracker implements IExtendedEntityProperties {
 			tags.setDouble("p1x", p1[X]);
 			tags.setDouble("p1y", p1[Y]);
 			tags.setDouble("p1z", p1[Z]);
-			tags.setDouble("p2x", p2[X]);
-			tags.setDouble("p2y", p2[Y]);
-			tags.setDouble("p2z", p2[Z]);
 		}
 	}
 	
@@ -54,10 +51,6 @@ public class PositionTracker implements IExtendedEntityProperties {
 					tags.getDouble("p1x"),
 					tags.getDouble("p1y"),
 					tags.getDouble("p1z")};
-			p2 = new double[] {
-					tags.getDouble("p2x"),
-					tags.getDouble("p2y"),
-					tags.getDouble("p2z")};
 		}
 	}
 	
@@ -67,13 +60,8 @@ public class PositionTracker implements IExtendedEntityProperties {
 	public void onUpdate() {
 		if (p1 == null) {
 			setCurrentPosition(p1 = new double[3]);
-			setCurrentPosition(p2 = new double[3]);
 			return;
 		}
-		
-		p2[X] = p1[X];
-		p2[Y] = p1[Y];
-		p2[Z] = p1[Z];
 		
 		setCurrentPosition(p1);
 		
@@ -81,13 +69,13 @@ public class PositionTracker implements IExtendedEntityProperties {
 	
 	public double[] getCurrentMotion() {
 		return new double[] {
-				func(player.posX, p1[X], p2[X]),
-				func(player.posY, p1[Y], p2[Y]),
-				func(player.posZ, p1[Z], p2[Z])};
+				func(player.posX, p1[X]),
+				func(player.posY, p1[Y]),
+				func(player.posZ, p1[Z])};
 	}
 	
-	private static double func(double p0, double p1, double p2) {
-		return 2 * p0 - 3 * p1 + p2;
+	private static double func(double p0, double p1) {
+		return p0 - p1;
 	}
 	
 	private void setCurrentPosition(double[] p) {
