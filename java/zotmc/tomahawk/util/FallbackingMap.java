@@ -1,20 +1,3 @@
-/*
- * Copyright (c) 2014, Zothf, All rights reserved.
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3.0 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library.
- */
-
 package zotmc.tomahawk.util;
 
 import java.util.Map;
@@ -24,12 +7,9 @@ import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.Maps;
 
 /**
- * A map which has default values according to the function provided.</br>
- * 
- * @author zot
+ * A map with default values according to the function provided.</br>
  */
-public abstract class FallbackingMap<K, V> extends ForwardingMap<K, V>
-		implements Map<K, V>, Function<K, V> {
+public abstract class FallbackingMap<K, V> extends ForwardingMap<K, V> implements Map<K, V>, Function<K, V> {
 	
 	public static <K, V> FallbackingMap<K, V> create(final Function<K, V> function) {
 		final Map<K, V> delegatee = Maps.newHashMap();

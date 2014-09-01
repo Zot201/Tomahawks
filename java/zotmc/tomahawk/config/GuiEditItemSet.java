@@ -33,6 +33,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(CLIENT)
@@ -50,9 +51,8 @@ public class GuiEditItemSet extends GuiEdit {
 	private List<Category> categories;
 	private EmbededList list;
 	
-	public GuiEditItemSet(GuiScreen parent, Config config,
-			Configurable<Set<Item>> value, Iterable<Item> universe, boolean negate) {
-		super(parent, config);
+	public GuiEditItemSet(GuiScreen parent, Configurable<Set<Item>> value, Iterable<Item> universe, boolean negate) {
+		super(parent);
 		
 		this.value = value;
 		this.universe = universe;
@@ -120,8 +120,10 @@ public class GuiEditItemSet extends GuiEdit {
 	
 	private class EmbededList extends GuiListExtended {
 		
-		private final PseudoIterator<IGuiListEntry> iterator =
-				PseudoIterator.of(Iterables.concat(categories));
+		private final PseudoIterator<IGuiListEntry> iterator = PseudoIterator.of(Iterables.concat(
+				Iterables.concat(categories),
+				ImmutableSet.of(new GuiPropCat(""))
+		));
 		
 		public EmbededList() {
 			super(mc(), GuiEditItemSet.this.width, GuiEditItemSet.this.height,
@@ -154,9 +156,9 @@ public class GuiEditItemSet extends GuiEdit {
 		private final List<ItemEntry> itemEntries;
 		
 		public Category(String modid, List<Item> items) {
-			titleEntry = new GuiPropCat(
-					modid.equals("minecraft") ? "Minecraft" :
-						FMLCommonHandler.instance().findContainerFor(modid).getName());
+			titleEntry = new GuiPropCat(modid.equals("minecraft") ?
+					"Minecraft" : Loader.instance().getIndexedModList().get(modid).getName()
+			);
 			
 			Function<List<Item>, ItemEntry> getItemEntry =
 					new Function<List<Item>, ItemEntry>() {

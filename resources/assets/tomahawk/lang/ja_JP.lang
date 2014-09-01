@@ -1,14 +1,30 @@
 ﻿
-tomahawk.gui.on=有効
-tomahawk.gui.off=無効
-tomahawk.gui.resetAll=初期化
+tomahawk.name=Tomahawks
+tomahawk.core.name=Tomahawks Core
 
-tomahawk.gui.config.title=%s コンフィグ
+tomahawk.gui.on=あり
+tomahawk.gui.off=なし
+tomahawk.gui.resetAll=初期化
+tomahawk.gui.disabled=無効
+
+tomahawk.gui.config.title=%s 設定
+tomahawk.gui.config.resolver.title=%s ID 競合解消
+tomahawk.gui.config.doneRemarked=%s (要再起動)
+tomahawk.gui.config.saveExit=セーブして終了
+tomahawk.gui.config.saveProceed=セーブして続行
 
 tomahawk.gui.config.general=一般
-tomahawk.gui.config.commonAxesThrowing=通常斧投げ
+tomahawk.gui.config.commonAxesThrowing=通常斧投擲
 tomahawk.gui.config.throwableItems=投擲可能アイテム
 
+tomahawk.gui.config.enchantments=エンチャント
+tomahawk.gui.config.igniteFireRespect=火属性アイテムの着火
+tomahawk.gui.config.goldenFusion=金の剣よりエンチャントを継承
+
 tomahawk.gui.config.compatibilities=互換性
-tomahawk.gui.config.tiCHatchetsThrowing=TiC 手斧投げ
-tomahawk.gui.config.tiCFryingPansThrowing=TiC フライパン投げ
+tomahawk.gui.config.tiCHatchetsThrowing=TiC 斧投擲
+tomahawk.gui.config.tiCLumberAxesThrowing=TiC まさかり投擲
+tomahawk.gui.config.tiCFryingPansThrowing=TiC フライパン投擲
+tomahawk.gui.config.tiCHammersThrowing=TiC ハンマー投擲
+
+enchantment.tomahawk.replica=レプリカ

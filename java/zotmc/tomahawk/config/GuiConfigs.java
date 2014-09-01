@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.util.ResourceLocation;
 import cpw.mods.fml.client.IModGuiFactory;
+import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(CLIENT)
@@ -17,10 +18,13 @@ public class GuiConfigs implements IModGuiFactory {
 	@Override public Class<? extends GuiScreen> mainConfigGuiClass() {
 		return GuiConfigScreen.class;
 	}
+	
 	@Override public void initialize(Minecraft minecraftInstance) { }
+	
 	@Override public Set<RuntimeOptionCategoryElement> runtimeGuiCategories() {
 		return null;
 	}
+	
 	@Override public RuntimeOptionGuiHandler getHandlerFor(RuntimeOptionCategoryElement element) {
 		return null;
 	}

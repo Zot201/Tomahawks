@@ -15,7 +15,6 @@ import static org.lwjgl.opengl.GL11.glPopMatrix;
 import static org.lwjgl.opengl.GL11.glPushMatrix;
 import static zotmc.tomahawk.config.GuiConfigs.mc;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.item.Item;
@@ -32,15 +31,14 @@ public class GuiItemButton extends GuiButtonRunnable {
 	
 	private Supplier<Boolean> displayState;
 	private ItemStack displayItem;
-	private GuiScreen parent;
 	
 	private Holder<ItemStack> toolTipItem;
-
+	
 	public GuiItemButton(Runnable action) {
 		super(action);
 		setWidthHeight(22, 22);
 	}
-
+	
 	public GuiItemButton setDisplayItem(Item displayItem) {
 		return setDisplayItem(new ItemStack(displayItem));
 	}
@@ -64,7 +62,6 @@ public class GuiItemButton extends GuiButtonRunnable {
 		this.toolTipItem = toolTipItem;
 		return this;
 	}
-	
 	
 	
 	
@@ -122,5 +119,4 @@ public class GuiItemButton extends GuiButtonRunnable {
 		return Range.closedOpen(yPosition, yPosition + height);
 	}
 	
-
 }

@@ -6,7 +6,7 @@ public class ConfigurableBoolean extends Configurable<Boolean> {
 	
 	private boolean value;
 	
-	public ConfigurableBoolean(String category, String key) {
+	ConfigurableBoolean(String category, String key) {
 		super(category, key);
 	}
 	
@@ -27,7 +27,6 @@ public class ConfigurableBoolean extends Configurable<Boolean> {
 		configFile.get(category, key, false).set(value);
 		
 		configFile.save();
-		
 	}
 	
 }

@@ -2,114 +2,90 @@ package zotmc.tomahawk.util;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+
+import org.objectweb.asm.Type;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Supplier;
-import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
+import com.google.common.reflect.Invokable;
+import com.google.common.reflect.TypeToken;
+
+import cpw.mods.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 
 public class Refls {
 	
-	public static Field getDeclaredField(Class<?> clz, String fieldName) {
-		try {
-			Field ret = clz.getDeclaredField(fieldName);
-			ret.setAccessible(true);
-			return ret;
-		} catch (Throwable e) {
-			throw Throwables.propagate(e);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T> T get(Field field, Object obj) {
-		try {
-			return (T) field.get(obj);
-		} catch (Throwable e) {
-			throw Throwables.propagate(e);
-		}
-	}
-	
-	
-	public static Runnable asRunnable(final Object obj, String methodName) {
-		final Method method = getInstanceMethod(obj, methodName);
+	public static Class<?> findClass(String... names) {
+		for (String s : names)
+			try {
+				return Class.forName(s);
+			} catch (Throwable ignored) { }
 		
-		return new Runnable() {
-			@Override public void run() {
-				invoke(method, obj);
-			}
-		};
+		throw new UnknownClassException(Joiner.on(", ").join(names)); 
 	}
 	
-	public static <T> Supplier<T> asSupplier(final Object obj, String methodName) {
-		final Method method = getInstanceMethod(obj, methodName);
+	
+	public static Field findField(Class<?> clz, String... names) {
+		String owner = unmapTypeName(clz);
+		for (String s : names)
+			try {
+				Field f = clz.getDeclaredField(remapFieldName(owner, s));
+				f.setAccessible(true);
+				return f;
+			} catch (Throwable ignored) { }
 		
-		return new Supplier<T>() {
-			@SuppressWarnings("unchecked")
-			@Override public T get() {
-				return (T) invoke(method, obj);
-			}
-		};
+		throw new UnknownFieldException(clz.getName() + ".{" + Joiner.on(", ").join(names) + "}");
 	}
 	
 	
-	private static Object invoke(Method method, Object obj, Object... args) {
-		try {
-			return method.invoke(obj, args);
-		} catch (Throwable e) {
-			throw Throwables.propagate(e);
+	public static <T> MethodFinder<T> findMethod(Class<T> clz, String... names) {
+		return new MethodFinder<T>(clz, names);
+	}
+	public static class MethodFinder<T> {
+		private final Class<T> clz;
+		private final String[] names;
+		private MethodFinder(Class<T> clz, String[] names) {
+			this.clz = clz;
+			this.names = names;
 		}
-	}
-	
-	
-	
-	private static Method getInstanceMethod(Object obj, String name, Class<?>... parameterTypes) {
-		for (Class<?> clz = obj.getClass(); clz != null; clz = clz.getSuperclass()) {
+		
+		public Method withArgs(Class<?>... parameterTypes) {
+			String owner = unmapTypeName(clz);
+			for (String s : names)
+				try {
+					Method m = clz.getDeclaredMethod(remapMethodName(owner, s), parameterTypes);
+					m.setAccessible(true);
+					return m;
+				} catch (Throwable ignored) { }
 			
-			Method ret = tryGetDeclaredMethod(clz, name, parameterTypes);
-			if (ret != null) {
-				ret.setAccessible(true);
-				return ret;
-			}
+			throw new UnknownMethodException(String.format(
+					"%s.{%s}(%s)",
+					clz.getName(),
+					Joiner.on(", ").join(names),
+					Joiner.on(", ").join(Utils.transform(parameterTypes, ClassNameFunction.INSTANCE))
+			));
 		}
-		
-		throw new RuntimeException(
-				new NoSuchMethodException(String.format(
-						"%s.%s(%s)",
-						obj.getClass(), name, argumentTypesToString(parameterTypes))));
+		public Invokable<T, Object> asInvokable(Class<?>... parameterTypes) {
+			return TypeToken.of(clz).method(withArgs(parameterTypes));
+		}
 	}
 	
-	private static String argumentTypesToString(Class<?>[] argTypes) {
-		return Joiner.on(", ").join(FluentIterable
-				.from(Arrays.asList(argTypes))
-				.transform(getClassName));
+	
+	
+	private static String unmapTypeName(Class<?> clz) {
+		return FMLDeobfuscatingRemapper.INSTANCE.unmap(Type.getInternalName(clz));
+	}
+	private static String remapFieldName(String owner, String field) {
+		return FMLDeobfuscatingRemapper.INSTANCE.mapFieldName(owner, field, null);
+	}
+	private static String remapMethodName(String owner, String method) {
+		return FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(owner, method, null);
 	}
 	
-	private static final Function<Class<?>, String> getClassName =
-			new Function<Class<?>, String>() {
+	enum ClassNameFunction implements Function<Class<?>, String> {
+		INSTANCE;
 		@Override public String apply(Class<?> input) {
-			return input != null ? input.getName() : "null";
+			return input == null ? "null" : input.getName();
 		}
-	};
-	
-	
-	
-	private static Method getDeclaredMethod(Class<?> clz, String name, Class<?>... parameterTypes) {
-		try {
-			return clz.getDeclaredMethod(name, parameterTypes);
-		} catch (Throwable e) {
-			throw Throwables.propagate(e);
-		}
-	}
-	
-	
-	private static Method tryGetDeclaredMethod(Class<?> clz, String name, Class<?>... parameterTypes) {
-		try {
-			return clz.getDeclaredMethod(name, parameterTypes);
-		} catch (Throwable ignored) { }
-		
-		return null;
 	}
 
 }

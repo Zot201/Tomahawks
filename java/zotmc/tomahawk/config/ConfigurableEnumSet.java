@@ -4,7 +4,6 @@ import java.util.Set;
 
 import zotmc.tomahawk.util.Utils;
 
-import com.google.common.base.Enums;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
@@ -14,14 +13,9 @@ public class ConfigurableEnumSet<E extends Enum<E>> extends ConfigurableStringLi
 	
 	private final Class<E> clz;
 	
-	private ConfigurableEnumSet(Class<E> clz, String category, String key) {
+	ConfigurableEnumSet(Class<E> clz, String category, String key) {
 		super(category, key);
 		this.clz = clz;
-	}
-	
-	static <E extends Enum<E>> ConfigurableEnumSet<E> of(
-			Class<E> clz, String category, String key) {
-		return new ConfigurableEnumSet<E>(clz, category, key);
 	}
 	
 	@Override protected Set<E> getInitialValue() {
@@ -29,13 +23,17 @@ public class ConfigurableEnumSet<E extends Enum<E>> extends ConfigurableStringLi
 	}
 	
 	@Override protected Function<E, String> toStringFunction() {
-		return Utils.toStringFunction();
+		return Utils.enumToName();
 	}
-
+	
 	@Override protected Function<String, E> valueOfFunction() {
-		return Enums.valueOfFunction(clz);
+		return new Function<String, E>() {
+			@Override public E apply(String input) {
+				return Enum.valueOf(clz, input);
+			}
+		};
 	}
-
+	
 	@Override protected void setIterable(FluentIterable<E> iterable) {
 		value = Sets.immutableEnumSet(iterable);
 	}

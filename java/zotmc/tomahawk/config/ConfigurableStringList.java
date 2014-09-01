@@ -11,7 +11,7 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 	
 	protected T value = getInitialValue();
 	
-	public ConfigurableStringList(String category, String key) {
+	ConfigurableStringList(String category, String key) {
 		super(category, key);
 	}
 	
@@ -49,7 +49,6 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 		setIterable(FluentIterable
 				.from(Arrays.asList(a))
 				.transform(valueOfFunction()));
-		
 	}
 	
 	@Override void save(Configuration configFile) {
@@ -58,7 +57,6 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 			.set(getStringList());
 		
 		configFile.save();
-		
 	}
 
 }

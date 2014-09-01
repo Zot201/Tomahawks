@@ -1,14 +1,30 @@
+
+tomahawk.name=Tomahawks
+tomahawk.core.name=Tomahawks Core
 ﻿
 tomahawk.gui.on=On
 tomahawk.gui.off=Off
 tomahawk.gui.resetAll=Reset All
+tomahawk.gui.disabled=Disabled
 
 tomahawk.gui.config.title=%s Config
+tomahawk.gui.config.resolver.title=%s ID Conflict Resolver
+tomahawk.gui.config.doneRemarked=%s (Restart Required)
+tomahawk.gui.config.saveExit=Save & Exit
+tomahawk.gui.config.saveProceed=Save & Proceed
 
 tomahawk.gui.config.general=General
 tomahawk.gui.config.commonAxesThrowing=Common Axes Throwing
 tomahawk.gui.config.throwableItems=Throwable Items
 
+tomahawk.gui.config.enchantments=Enchantments
+tomahawk.gui.config.igniteFireRespect=Ignite Fire Respect Items
+tomahawk.gui.config.goldenFusion=Golden Sword Inheritance
+
 tomahawk.gui.config.compatibilities=Compatibilities
 tomahawk.gui.config.tiCHatchetsThrowing=TiC Hatchets Throwing
+tomahawk.gui.config.tiCLumberAxesThrowing=TiC Lumber Axes Throwing
 tomahawk.gui.config.tiCFryingPansThrowing=TiC Frying Pans Throwing
+tomahawk.gui.config.tiCHammersThrowing=TiC Hammers Throwing
+
+enchantment.tomahawk.replica=Replica

@@ -1,95 +1,129 @@
 package zotmc.tomahawk.projectile;
 
-import static net.minecraft.enchantment.Enchantment.fireAspect;
-import static net.minecraft.enchantment.Enchantment.knockback;
-import static net.minecraft.enchantment.EnchantmentHelper.getEnchantmentLevel;
+import static java.util.concurrent.ThreadLocalRandom.current;
 import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
-import static net.minecraft.util.MathHelper.cos;
-import static net.minecraft.util.MathHelper.sin;
-import static net.minecraft.util.MovingObjectPosition.MovingObjectType.BLOCK;
-import static net.minecraftforge.common.util.ForgeDirection.DOWN;
-import static net.minecraftforge.common.util.ForgeDirection.UP;
-import static zotmc.tomahawk.LogTomahawk.phy4j;
-import static zotmc.tomahawk.LogTomahawk.pro4j;
-import static zotmc.tomahawk.projectile.AbstractTomahawk.State.IN_AIR;
-import static zotmc.tomahawk.projectile.AbstractTomahawk.State.NO_REBOUNCE;
-import static zotmc.tomahawk.projectile.AbstractTomahawk.State.ON_GROUND;
-import static zotmc.tomahawk.projectile.EntityTomahawk.PickUpType.CREATIVE;
-import static zotmc.tomahawk.projectile.EntityTomahawk.PickUpType.SURVIVAL;
-import static zotmc.tomahawk.util.Utils.PI;
-import static zotmc.tomahawk.util.Utils.atan;
-import static zotmc.tomahawk.util.Utils.sqrt;
+import static zotmc.tomahawk.api.PickUpType.CREATIVE;
+import static zotmc.tomahawk.api.PickUpType.SURVIVAL;
+import static zotmc.tomahawk.data.ReflData.EntityArrows.TICKS_IN_AIR;
+import static zotmc.tomahawk.data.ReflData.EntityArrows.TICKS_IN_GROUND;
+import static zotmc.tomahawk.data.ReflData.EntityArrows.X_TILE;
+import static zotmc.tomahawk.data.ReflData.EntityArrows.Y_TILE;
+import static zotmc.tomahawk.data.ReflData.EntityArrows.Z_TILE;
+import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_AIR;
 
 import java.lang.ref.WeakReference;
 import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
+import net.minecraft.dispenser.IPosition;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.ai.attributes.BaseAttributeMap;
 import net.minecraft.entity.ai.attributes.ServersideAttributeMap;
-import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.util.ForgeDirection;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import zotmc.tomahawk.Enchs;
-import zotmc.tomahawk.LogTomahawk;
-import zotmc.tomahawk.TomahawkRegistry;
+
+import org.apache.logging.log4j.Logger;
+
+import zotmc.tomahawk.api.PickUpType;
+import zotmc.tomahawk.api.Pointable;
+import zotmc.tomahawk.api.TomahawkRegistry;
+import zotmc.tomahawk.api.WeaponDispenseEvent;
+import zotmc.tomahawk.api.WeaponLaunchEvent;
+import zotmc.tomahawk.config.Config;
+import zotmc.tomahawk.core.LogTomahawk;
+import zotmc.tomahawk.core.PositionTracker;
+import zotmc.tomahawk.core.TomahawkImpls;
+import zotmc.tomahawk.util.Fields;
+import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Utils;
+import zotmc.tomahawk.util.geometry.AbsCylindricalVec3d.DelegationHandler;
+import zotmc.tomahawk.util.geometry.Angle;
+import zotmc.tomahawk.util.geometry.Angle.Unit;
+import zotmc.tomahawk.util.geometry.EntityGeometry;
+import zotmc.tomahawk.util.geometry.HybridVec3d;
+import zotmc.tomahawk.util.geometry.Vec3d;
+import zotmc.tomahawk.util.geometry.Vec3i;
+import zotmc.tomahawk.util.prop.BooleanProp;
+import zotmc.tomahawk.util.prop.ByteProp;
+import zotmc.tomahawk.util.prop.IntProp;
+import zotmc.tomahawk.util.prop.Prop;
+import zotmc.tomahawk.util.prop.Props;
 
-import com.google.common.collect.Range;
-
-public class EntityTomahawk extends AbstractTomahawk {
+public class EntityTomahawk extends EntityArrow implements Pointable {
 	
-	private static final Random RAND = new Random();
-	
-	public enum PickUpType {
-		SURVIVAL,
-		CREATIVE,
-		ENCH;
+	public enum State {
+		IN_AIR,
+		IN_GROUND,
+		NO_REBOUNCE,
+		ON_GROUND,
+		ON_RELEASE;
 		
-		public boolean canBePickedUpBy(PickUpType type) {
-			switch (type) {
-			case SURVIVAL:
-				return this == SURVIVAL;
-			case CREATIVE:
-				return this != ENCH;
-			case ENCH:
-				return this != CREATIVE;
-			}
-			return false;
+		public boolean isStationary() {
+			return (ordinal() & 1) == 1;
 		}
-		
 	}
 	
 	
-	public final float aRoll = worldObj.isRemote ? (float) RAND.nextGaussian() * 15/2F : 0;
-	public final float bRoll = worldObj.isRemote ? (float) RAND.nextGaussian() * 1/2F : 0;
 	
-	public PickUpType pickUpType = SURVIVAL;
+	public final float aRoll = worldObj.isRemote ? (float) current().nextGaussian() * 15/2F : 0;
+	public final float bRoll = worldObj.isRemote ? (float) current().nextGaussian() * 1/2F : 0;
 	
-	float damageAttr;
-	int knockbackStr;
+	public final Vec3d entityMotion = EntityGeometry.getMotion(this);
+	public final Angle entityRotationYaw = EntityGeometry.getRotationYaw(this);
+	public final Vec3d pos = EntityGeometry.getPos(this);
+	public IdentityBlockMeta inTile = IdentityBlockMeta.AIR;
+	public final Vec3i inTilePos = Fields.asVec3i(this, X_TILE, Y_TILE, Z_TILE);
+	protected final Prop<Integer> ticksInGround = Fields.referTo(this, TICKS_IN_GROUND).ofType(int.class);
+	protected final Prop<Integer> ticksInAir = Fields.referTo(this, TICKS_IN_AIR).ofType(int.class);
 	
-	public WeakReference<PlayerTomahawk> fakePlayer = new WeakReference<PlayerTomahawk>(null);
+	public PickUpType pickUpType = PickUpType.SURVIVAL;
+	public float damageAttr;
+	public int knockbackStr;
+	public int sideHit = -1;
+	public final Runnable ticker = createTicker();
+	private WeakReference<FakePlayerTomahawk> fakePlayer = new WeakReference<>(null);
+	
+	public final HybridVec3d projectileMotion = new HybridVec3d() {
+		@Override protected boolean normalize() {
+			if (super.normalize()) {
+				Props.toggle(isForwardSpin);
+				return true;
+			}
+			return false;
+		}
+	};
+	public final Vec3d spin = projectileMotion.derive(new DelegationHandler() {
+		@Override public double getY(double y) {
+			return 0;
+		}
+		@Override public double getRho(double rho) {
+			return getSpinStrength();
+		}
+		@Override public int getPhi(int phi) {
+			return phi + (Integer.MIN_VALUE / -2) * Props.toSignum(isForwardSpin);
+		}
+	});
+	
+	
 	
 	public EntityTomahawk(World world) {
 		super(world);
 	}
-	public EntityTomahawk(World world, double x, double y, double z, ItemStack item) {
-		super(world, x, y, z, INITIAL_SPEED);
-		setItem(item);
+	
+	public EntityTomahawk(World world, IPosition pos, ItemStack item) {
+		super(world, pos.getX(), pos.getY(), pos.getZ());
+		setSize(0.6F, 0.6F);
+		
+		initItem(item);
 		
 		if (!world.isRemote) {
 			BaseAttributeMap attrs = new ServersideAttributeMap();
@@ -97,12 +131,26 @@ public class EntityTomahawk extends AbstractTomahawk {
 			attrs.applyAttributeModifiers(item.getAttributeModifiers());
 			damageAttr = (float) attrs.getAttributeInstance(attackDamage).getAttributeValue();
 		}
-		
 	}
-	public EntityTomahawk(World world, EntityLivingBase thrower, ItemStack item) {
-		super(world, thrower, INITIAL_SPEED);
-		setItem(item);
-
+	
+	public EntityTomahawk(World world, EntityLivingBase thrower, float initalSpeed, ItemStack item) {
+		super(world, thrower, initalSpeed / 1.5F);
+		setSize(0.6F, 0.6F);
+        //setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
+		
+		if (!world.isRemote) {
+			if (thrower instanceof EntityPlayer)
+				PositionTracker.get((EntityPlayer) thrower).getCurrentMotion().addTo(entityMotion);
+			else
+				EntityGeometry.getMotion(thrower).addTo(entityMotion);
+			
+			setThrowableHeading(motionX, motionY, motionZ, initalSpeed, 1);
+		}
+		
+		entityRotationYaw.setRadians(entityMotion.yaw());
+		
+		initItem(item);
+		
 		if (!world.isRemote) {
 			damageAttr = (float) thrower.getEntityAttribute(attackDamage).getAttributeValue();
 			if (thrower.isSprinting())
@@ -112,7 +160,42 @@ public class EntityTomahawk extends AbstractTomahawk {
 					&& thrower.ridingEntity == null)
 				setIsCritical(true);
 		}
+	}
+	
+	public EntityTomahawk(WeaponLaunchEvent event) {
+		this(event.entity.worldObj, event.entityLiving, event.initialSpeed, event.item);
 		
+		isForwardSpin.set(event.isForwardSpin);
+		isRolled.set(!event.isForwardSpin);
+		pickUpType = event.getPickUpType();
+		isFragile.set(event.isFragile);
+	}
+	
+	public EntityTomahawk(WeaponDispenseEvent event) {
+		this(event.world, event.getPosition(), event.item);
+		
+		isForwardSpin.set(event.isForwardSpin);
+		isRolled.set(!event.isForwardSpin);
+		pickUpType = event.getPickUpType();
+		isFragile.set(event.isFragile);
+		
+		EnumFacing facing = event.getFacing();
+		setThrowableHeading(
+				facing.getFrontOffsetX(),
+				facing.getFrontOffsetY() + 0.1F,
+				facing.getFrontOffsetZ(),
+				event.initialSpeed, event.deviation
+		);
+	}
+	
+	protected void initItem(ItemStack item) {
+		this.item.set(item);
+		if (Config.current().igniteFireRespect.get() && Utils.getEnchLevel(Enchantment.fireAspect, item) > 0)
+			setFire(100);
+	}
+	
+	protected Runnable createTicker() {
+		return new TickerTomahawk(this);
 	}
 	
 	
@@ -121,438 +204,291 @@ public class EntityTomahawk extends AbstractTomahawk {
 		super.entityInit();
 		getDataWatcher().addObject(2, (float) 0);
 		getDataWatcher().addObject(3, (int) -1);
-		getDataWatcher().addObject(4, (byte) 1);
+		getDataWatcher().addObject(4, (byte) 0b1);
+		getDataWatcher().addObject(5, (byte) 0);
 		getDataWatcher().addObjectByDataType(10, 5);
 	}
 	
-	public void setRotation(float value) {
-		getDataWatcher().updateObject(2, value);
-	}
-	public float getRotation() {
-		return getDataWatcher().getWatchableObjectFloat(2);
-	}
+	public final Angle rotation = Props.ofAngle(Unit.DEGREE, this, 2);
 	
-	public void setAfterHit(int value) {
-		getDataWatcher().updateObject(3, value);
-	}
-	public int getAfterHit() {
-		return getDataWatcher().getWatchableObjectInt(3);
-	}
+	public final IntProp afterHit = Props.ofInt(this, 3);
 	
-	public void setIsForwardSpin(boolean value) {
-		getDataWatcher().updateObject(4, value ? (byte) 1 : (byte) 0);
-	}
-	public boolean getIsForwardSpin() {
-		return (getDataWatcher().getWatchableObjectByte(4) & 1) != 0;
-	}
+	public final BooleanProp isForwardSpin = Props.ofBoolean(this, 4, 0);
+	public final BooleanProp isRolled = Props.ofBoolean(this, 4, 1);
+	public final BooleanProp isFixed = Props.ofBoolean(this, 4, 2);
+	public final BooleanProp isFragile = Props.ofBoolean(this, 4, 3);
+	public final BooleanProp isBreaking = Props.ofBoolean(this, 4, 4);
 	
-	public void setItem(ItemStack value) {
-		getDataWatcher().updateObject(10, value);
-		getDataWatcher().setObjectWatched(10);
-	}
-	public ItemStack getItem() {
-		return getDataWatcher().getWatchableObjectItemStack(10);
-	}
+	private ByteProp stateByte = Props.ofByte(this, 5);
+	public Prop<State> state = Props.ofEnum(State.class, stateByte);
+	
+	public final Prop<ItemStack> item = Props.ofItemStack(this, 10);
 	
 	
 	@Override public void writeEntityToNBT(NBTTagCompound tags) {
 		super.writeEntityToNBT(tags);
-		
-		tags.setFloat("rotation", getRotation());
-		tags.setInteger("ticksAfterHit", getAfterHit());
-		tags.setBoolean("isForwardSpin", getIsForwardSpin());
+		tags.setByte("state", stateByte.get());
+		tags.setFloat("rotation", rotation.toDegrees());
+		tags.setInteger("ticksAfterHit", afterHit.get());
+		tags.setBoolean("isForwardSpin", isForwardSpin.get());
 		tags.setByte("pickUpType", (byte) pickUpType.ordinal());
-		tags.setTag("item", getItem().writeToNBT(new NBTTagCompound()));
+		tags.setTag("item", item.get().writeToNBT(new NBTTagCompound()));
 		tags.setFloat("damageAttr", damageAttr);
 		tags.setShort("knockbackStr", (short) knockbackStr);
-		
+		tags.setTag("projectileMotion", projectileMotion.writeToNBT());
+		tags.setBoolean("isRolled", isRolled.get());
+		tags.setBoolean("isFixed", isFixed.get());
+		tags.setByte("sideHit", (byte) sideHit);
+		tags.setTag("inTileMeta", inTile.toNBT());
 	}
-	
 	@Override public void readEntityFromNBT(NBTTagCompound tags) {
 		super.readEntityFromNBT(tags);
-		
-		setRotation(tags.getFloat("rotation"));
-		setAfterHit(tags.getInteger("ticksAfterHit"));
-		setIsForwardSpin(tags.getBoolean("isForwardSpin"));
+		stateByte.set(tags.getByte("state"));
+		rotation.setDegrees(tags.getFloat("rotation"));
+		afterHit.set(tags.getInteger("ticksAfterHit"));
+		isForwardSpin.set(tags.getBoolean("isForwardSpin"));
 		pickUpType = PickUpType.values()[tags.getByte("pickUpType")];
-		setItem(ItemStack.loadItemStackFromNBT(tags.getCompoundTag("item")));
+		item.set(ItemStack.loadItemStackFromNBT(tags.getCompoundTag("item")));
 		damageAttr = tags.getFloat("damageAttr");
 		knockbackStr = tags.getShort("knockbackStr");
+		projectileMotion.readFromNBT(tags.getCompoundTag("projectileMotion"));
+		isRolled.set(tags.getBoolean("isRolled"));
+		isFixed.set(tags.getBoolean("isFixed"));
+		sideHit = tags.getByte("sideHit");
+		inTile = IdentityBlockMeta.readFromNBT(tags.getCompoundTag("inTileMeta"));
+	}
+	
+	
+	
+	
+	@Override public void onUpdate() {
+		lastTickPosX = posX;
+		lastTickPosY = posY;
+		lastTickPosZ = posZ;
 		
+		super.onEntityUpdate();
+		
+		/*if (!worldObj.isRemote) {
+			phy4j().debug("====On Update====");
+			phy4j().debug("Entity ID:    %d", getEntityId());
+			phy4j().debug("Tick Existed: %d", ticksExisted);
+			phy4j().debug("State:        %s", state.get());
+			phy4j().debug("Pos Ground:   %s", posGround);
+			phy4j().debug("Pos:          %.1s", pos);
+			phy4j().debug("Motion:       %.3s", entityMotion);
+			phy4j().debug("Rotation Yaw: %#.1s", entityRotationYaw);
+			phy4j().debug("Rotation:     %#.1s", rotation);
+		}*/
+		
+		ticker.run();
+		
+		/*if (!worldObj.isRemote)
+			phy4j().debug("");*/
+		
+		setPosition(posX, posY, posZ);
 	}
 	
-	
-	
-	@Override public int getLifespan() {
-		switch (pickUpType) {
-		case SURVIVAL:
-			ItemStack item = getItem();
-			return item != null ? item.getItem().getEntityLifespan(item, worldObj) : 120;
-		case ENCH:
-			return 120;
-		default:
-			return super.getLifespan();
-		}
+	@Override public boolean canAttackWithItem() {
+		return true;
 	}
 	
-	
-	
-	public boolean readyForPickUp() {
-		return getState() != IN_AIR || getAfterHit() >= 5;
+	@Override public boolean hitByEntity(Entity entity) {
+		return entity instanceof EntityPlayer && onLeftClick((EntityPlayer) entity);
 	}
 	
 	@Override public void onCollideWithPlayer(EntityPlayer player) {
-		if (!worldObj.isRemote && readyForPickUp()) {
-			boolean pickedUp = pickUpType.canBePickedUpBy(SURVIVAL)
-					|| player.capabilities.isCreativeMode && pickUpType.canBePickedUpBy(CREATIVE);
+		if (!worldObj.isRemote && !isFixed.get() && readyForPickUp()) {
+			boolean creative = player.capabilities.isCreativeMode;
 			
-			ItemStack item = getItem();
-			if (pickUpType.canBePickedUpBy(SURVIVAL)
-					&& !player.inventory.addItemStackToInventory(item))
-				pickedUp = false;
-			
-			if (pickedUp) {
+			if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
+				ItemStack item = this.item.get();
+				
+				if (pickUpType.canBePickedUpBy(SURVIVAL)) {
+					if (player.getCurrentEquippedItem() == null)
+						player.setCurrentItemOrArmor(0, item);
+					else if (!player.inventory.addItemStackToInventory(item))
+						return;
+				}
+				
 				playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1) * 2);
 				player.onItemPickup(this, item.stackSize);
 				setDead();
-				
-				pro4j().debug("An EntityTomahawk %s [PickUpType: %s] has been picked up by EntityPlayer %s",
-						getItem(), pickUpType, player.getEntityId());
 			}
 		}
 	}
 	
-	@Override public void onUpdate() {
-		super.onUpdate();
+	public boolean onLeftClick(EntityPlayer player) {
+		if (!worldObj.isRemote && (!isFixed.get() || player.isSneaking()) && state.get().isStationary())
+			attemptPickup(player);
 		
-		if (getState() == IN_AIR || getState() == NO_REBOUNCE) {
-			setRotation(modAngle(getRotation() + 56F * getSpinFactor(false)));
-			
-			float p = 7 / getSpinFactor(false);
-			float t = ticksInAir.get() % p;
-			if (t >= p - 1)
-				playInAirSound(motionX * motionX + motionY * motionY + motionZ * motionZ);
-			
-			
-			if (getAfterHit() < 0) {
-				if (getIsCritical())
-					for (int i = 0; i < 4; i++)
-						worldObj.spawnParticle("crit",
-								posX + motionX * i / 4.0, 
-								posY + motionY * i / 4.0,
-								posZ + motionZ * i / 4.0,
-								-motionX, -motionY + 0.2D, -motionZ);
-				
-				if (worldObj.isRemote && getItem().isItemEnchanted())
-					for (int i = 0; i < 3; i++)
-						if (RAND.nextInt(4) == 0)
-							worldObj.spawnParticle("magicCrit",
-									posX + motionX * i / 3.0, 
-									posY + motionY * i / 3.0,
-									posZ + motionZ * i / 3.0,
-									-motionX, -motionY + 0.2D, -motionZ);
-			}
-			else
-				setAfterHit(getAfterHit() + 1);
-		}
-		
+		return true; // return true to indicate no further process
 	}
 	
-	@Override protected boolean onLifespanTick(int lifespan) {
-		if (super.onLifespanTick(lifespan)) {
-			pro4j().debug("An EntityTomahawk %s [State: %s][Pos: %.0f %.0f %.0f] has its lifespan %s expired",
-					getItem(), getState(), posX, posY, posZ, lifespan);
+	public boolean attemptPickup(EntityPlayer player) {
+		boolean creative = player.capabilities.isCreativeMode;
+		
+		if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
+			ItemStack item = this.item.get();
 			
+			if (pickUpType.canBePickedUpBy(SURVIVAL)) {
+				if (player.getCurrentEquippedItem() == null)
+					player.setCurrentItemOrArmor(0, item);
+				else if (!player.inventory.addItemStackToInventory(item))
+					return false;
+			}
+			
+			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1) * 2);
+			player.onItemPickup(this, item.stackSize);
+			setDead();
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	@Override public boolean interactFirst(EntityPlayer player) {
+		if (state.get().isStationary() && player.isSneaking()
+				&& pickUpType.canBePickedUpBy(player.capabilities.isCreativeMode ? CREATIVE : SURVIVAL)) {
+			Props.toggle(isFixed);
+			player.swingItem();
 			return true;
 		}
 		return false;
 	}
 	
-	@Override protected void onImpact(MovingObjectPosition mop) {
-		if (getAfterHit() < 0 && mop.entityHit != null) {
-			
-			ItemStack item = getItem();
-			
-			boolean flag = worldObj.isRemote;
-			if (!flag && worldObj instanceof WorldServer) {
-				PlayerTomahawk fakePlayer = new PlayerTomahawk((WorldServer) worldObj, this);
-				
-				flag = !MinecraftForge.EVENT_BUS.post(new AttackEntityEvent(fakePlayer, mop.entityHit))
-						&& !item.getItem().onLeftClickEntity(item, fakePlayer, mop.entityHit);
-				
-				this.fakePlayer = new WeakReference<PlayerTomahawk>(fakePlayer);
-			}
-			
-			if (flag && mop.entityHit.canAttackWithItem()
-					&& !mop.entityHit.hitByEntity(this)) {
-				
-				float damage = damageAttr;
-				float enchCrit = 0;
-				int knock = knockbackStr;
-				if (mop.entityHit instanceof EntityLivingBase) {
-					enchCrit = Enchs.getEnchantmentModifierLiving(item, (EntityLivingBase) mop.entityHit);
-					knock += getEnchantmentLevel(knockback.effectId, item);
-				}
-				
-				if (damage > 0 || enchCrit > 0) {
-					boolean critical = getIsCritical() && mop.entityHit instanceof EntityLivingBase;
-					if (critical && damage > 0)
-						damage *= 1.5F;
-					
-					damage += enchCrit;
-				
-					boolean setFire = false;
-					int fire = getEnchantmentLevel(fireAspect.effectId, item);
-					if (fire > 0 && mop.entityHit instanceof EntityLivingBase && !mop.entityHit.isBurning()) {
-						setFire = true;
-						mop.entityHit.setFire(1);
-					}
-					
-					
-					Entity thrower = getThrower();
-					
-					boolean attacked = mop.entityHit.attackEntityFrom(
-							new TomahawkDamage(this, thrower != null ? thrower : this),
-							damage);
-					
-					if (attacked) {
-						if (knock > 0) {
-							float hv = MathHelper.sqrt_double(motionX * motionX + motionZ * motionZ);
-							mop.entityHit.addVelocity(
-									(float) motionX / hv * knock * 0.5F,
-									0.1,
-									(float) motionZ / hv * knock * 0.5F);
-							motionX *= 0.6;
-							motionZ *= 0.6;
-						}
-						
-						if (critical)
-							Utils.onCritical(this, mop.entityHit);
-						
-						if (enchCrit > 0)
-							Utils.onEnchantmentCritical(this, mop.entityHit);
-						
-						/*
-						if (damage >= 18 && thrower instanceof EntityPlayer)
-							((EntityPlayer) thrower).triggerAchievement(AchievementList.overkill);
-						*/
-						//setLastAttacker?
-						//hurt player i.e. thorns
-						
-						if (thrower instanceof EntityLivingBase)
-							try {
-								Enchs.applyEnchantmentDamageIterator(
-										(EntityLivingBase) thrower, item, mop.entityHit);
-							} catch (Throwable ignored) { }
-						
-						Entity entity = mop.entityHit;
-						if (mop.entityHit instanceof EntityDragonPart) {
-							IEntityMultiPart dragon = ((EntityDragonPart) mop.entityHit).entityDragonObj;
-							if (dragon != null && dragon instanceof EntityLivingBase)
-								entity = (Entity) dragon;
-						}
-						
-						if (item != null && entity instanceof EntityLivingBase) {
-							if (thrower instanceof EntityPlayer)
-								item.hitEntity((EntityLivingBase) entity, (EntityPlayer) thrower);
-							else
-								item.attemptDamageItem(2, rand);
-							
-							if (item.stackSize <= 0) {
-								setDead();
-								
-								playSound("random.break", 0.8F, 0.8F + worldObj.rand.nextFloat() * 0.4F);
-								
-								pro4j().debug("An EntityTomahawk %s has been destroyed while hitting %s %s",
-										getItem(), entity.getClass().getSimpleName(), entity.getEntityId());
-							}
-							
-						}
-						
-						if (mop.entityHit instanceof EntityLivingBase) {
-							//addStat
-							
-							if (fire > 0)
-								mop.entityHit.setFire(fire * 4);
-						}
-						
-					}
-					else if (setFire)
-						mop.entityHit.extinguish();
-					
-				}
-			}
-			
-			rebounce(mop, getReactFactor(), true);
-			
-			setAfterHit(0);
-		}
-		else if (mop.typeOfHit == BLOCK) {
-			boolean setInGround = getState() != ON_GROUND;
-			
-			if (setInGround) {
-				float angle = getRotation() + 45;
-				if (mop.sideHit == DOWN.ordinal())
-					angle += 90 * (getIsForwardSpin() ? 1 : -1);
-				else if (mop.sideHit == UP.ordinal())
-					angle -= 90 * (getIsForwardSpin() ? 1 : -1);
-				
-				setInGround = ANGLE_RANGE.contains(modAngle(angle));
-			}
-			
-			if (setInGround) {
-				ItemStack item = getItem();
-				if (item != null && worldObj instanceof WorldServer) {
-					PlayerTomahawk fakePlayer = new PlayerTomahawk((WorldServer) worldObj, this);
-					
-					item.getItem().onBlockStartBreak(item, mop.blockX, mop.blockY, mop.blockZ, fakePlayer);
-					
-					this.fakePlayer = new WeakReference<PlayerTomahawk>(fakePlayer);
-				}
-				
-				super.onImpact(mop);
-				setIsCritical(false);
-			}
-			else {
-				ForgeDirection dir = ForgeDirection.getOrientation(mop.sideHit);
-				mop.hitInfo = worldObj.getWorldVec3Pool().getVecFromPool(
-						dir.offsetX, dir.offsetY, dir.offsetZ);
-				
-				rebounce(mop, getReactFactorOnBlock(), false);
-				
-				double v2 = motionX * motionX + motionY * motionY + motionZ * motionZ;
-				if (v2 < 1/9D) {
-					setState(NO_REBOUNCE);
-					setIsCritical(false);
-				}
-				
-				Block block = worldObj.getBlock(mop.blockX, mop.blockY, mop.blockZ);
-				playHitSound(false, block,
-						block.getBlockHardness(worldObj, mop.blockX, mop.blockY, mop.blockZ));
-			}
-		}
-	}
-
-	private static final Range<Float> ANGLE_RANGE = Range.closed(
-			atan(4/9D) * 180 / PI - 45, 180 - atan(2) * 180 / PI);
 	
-	@Override protected void onMotionTick(float vH, float v, float resistance) {
-		super.onMotionTick(vH, v, resistance);
-
-		if (getState() != ON_GROUND) {
-			float k = getSpinMotionFactor() * getSpinFactor(true);
-			double wH = -k * motionY;
-			double wY = k * vH;
-
-			double r = motionZ / motionX;
-			double wX;
-			double wZ;
-			if (!Double.isNaN(r)) {
-				wX = wH / sqrt(1 + r * r);
-				wZ = r * wX;
-			}
-			else {
-				wX = sin(rotationYaw * (PI / 180)) * wH;
-				wZ = cos(rotationYaw * (PI / 180)) * wH;
-			}
-			
-			motionX += wX;
-			motionY += wY;
-			motionZ += wZ;
-				
-		}
-		
+	
+	
+	public FakePlayerTomahawk getFakePlayer(WorldServer world) {
+		FakePlayerTomahawk fakePlayer = this.fakePlayer.get();
+		return fakePlayer != null ? fakePlayer : createFakePlayer(world);
 	}
 	
-	@Override protected void rebounce(MovingObjectPosition mop, double reactFactor, boolean onEntity) {
-		float p = rotationYaw;
-		
-		super.rebounce(mop, reactFactor, onEntity);
-		
-		if (modAngle(rotationYaw - p - 90) >= 0) {
-			setIsForwardSpin(!getIsForwardSpin());
-			setRotation(modAngle(getRotation() + 180));
-		}
+	public FakePlayerTomahawk createFakePlayer(WorldServer world) {
+		FakePlayerTomahawk fakePlayer = new FakePlayerTomahawk(world, this);
+		this.fakePlayer = new WeakReference<>(fakePlayer);
+		return fakePlayer;
 	}
 	
-	@Override protected void onRebounce(MovingObjectPosition mop, double nY, double n, double react) {
-		double w = react * getSpinReactFactor() * getSpinFactor(true);
-		double wH = w * nY / n;
-		double wY = w * sqrt(n * n - nY * nY) / n;
-
-		double r = motionZ / motionX;
-		double wX;
-		double wZ;
-		if (!Double.isNaN(r)) {
-			wX = wH / sqrt(1 + r * r);
-			wZ = r * wX;
-		}
-		else {
-			wX = sin(rotationYaw * (PI / 180)) * wH;
-			wZ = cos(rotationYaw * (PI / 180)) * wH;
-		}
-		
-		motionX += wX;
-		motionY += wY;
-		motionZ += wZ;
-		
-		if (mop.entityHit != null) {
-			mop.entityHit.motionX -= 0.02 * wX;
-			mop.entityHit.motionY -= 0.02 * wY;
-			mop.entityHit.motionZ -= 0.02 * wZ;
-		}
-		
+	Random rand() {
+		return rand;
 	}
 	
+	private static final Logger phy4j() {
+		return LogTomahawk.phy4j();
+	}
 	
-	@Override protected void playHitSound(boolean isStationary, Block block, float hardness) {
+	@Override public void func_145775_I() {
+		super.func_145775_I();
+	}
+	
+	protected void playInAirSound(double v2) {
+		if (!worldObj.isRemote)
+			playSound("random.bow",
+					Utils.closed(0, 1, (float) v2 * 16),
+					1 / (rand.nextFloat() * 0.4F + 1.2F) + 0.5F
+			);
+	}
+	
+	protected void playHitSound(boolean isStationary, Block block, float hardness) {
 		if (!worldObj.isRemote) {
-			SoundType sound = TomahawkRegistry.getHitSound(getItem().getItem());
+			ItemStack item = this.item.get();
+			SoundType hitSound = TomahawkRegistry.getItemHandler(item).getHitSound(item);
 			
-			if (sound != null)
-				playSound(sound.soundName, sound.getVolume(), sound.getPitch());
-			else if (hardness < 1)
-				super.playHitSound(isStationary, block, hardness);
+			if (hitSound != null)
+				playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
+			else if (hardness < 1) {
+				if (!worldObj.isRemote)
+					playSound("random.bowhit",
+							1.4F, (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 3/5F
+					);
+			}
 			else {
-				sound = block.stepSound;
-				float vol = sound.getVolume() * 28 / hardness;
-				float pit = sound.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
+				hitSound = block.stepSound;
+				float vol = hitSound.getVolume() * 28 / hardness;
+				float pit = hitSound.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
 				
 				if (!isStationary)
 					vol /= 6;
 				
 				int n = (int) vol;
 				for (int i = 0; i < n; i++)
-					playSound(sound.getBreakSound(), 1, pit);
+					playSound(hitSound.getBreakSound(), 1, pit);
 				
-				playSound(sound.getBreakSound(), vol - n, pit);
+				playSound(hitSound.getBreakSound(), vol - n, pit);
+				
 			}
 		}
 	}
 	
 	
 	
-	protected float getSpinFactor(boolean isSignApplicable) {
-		return (getAfterHit() >= 0 ? 55/72F : (getIsCritical() ? 7/6F : 1))
-				* (!isSignApplicable || getIsForwardSpin() ? 1 : -1);
+	public boolean isPersistenceRequired() {
+		return isFixed.get() || (pickUpType != CREATIVE && item.get().hasDisplayName());
 	}
 	
-	protected float getSpinMotionFactor() {
+	public int getLifespan() {
+		switch (pickUpType) {
+		case SURVIVAL:
+			ItemStack item = this.item.get();
+			return item == null ? 120 : item.getItem().getEntityLifespan(item, worldObj);
+		case ENCH:
+			return 120;
+		default:
+			return 1200;
+		}
+	}
+	
+	public boolean readyForPickUp() {
+		return state.get() != IN_AIR || afterHit.get() >= 5;
+	}
+	
+	public void onRelease(Vec3d motion) {
+		isFixed.set(false);
+		ticksInGround.set(0);
+		ticksInAir.set(0);
+		afterHit.set(-1);
+		motion.multiplyValues(rand, 0.2F);
+	}
+	
+	public void onBroken() {
+		TomahawkImpls.renderBrokenItemStack(this, item.get(), rand);
+		setDead();
+	}
+	
+	public void startBreaking() {
+		isBreaking.set(true);
+	}
+	
+	
+	
+	protected float getDragFactor() {
+		return 0.06F;
+	}
+	
+	protected float getGravity() {
+		return 0.12F;
+	}
+	
+	protected float getSpinStrength() {
+		return afterHit.get() >= 0 ? 55/72F : getIsCritical() ? 7/6F : 1;
+	}
+	
+	protected float getSpinMagnusFactor() {
 		return 0.02F;
 	}
 	
-	protected double getReactFactor() {
-		return 0.27;
-	}
-	
-	protected double getReactFactorOnBlock() {
-		return 0.24;
-	}
-	
-	protected double getSpinReactFactor() {
+	protected double getSpinFrictionFactor() {
 		return 2.51;
 	}
 	
-	protected static final float INITIAL_SPEED = 2.11F;
-
+	protected double getEntityRestitutionFactor() {
+		return 0.27;
+	}
+	
+	protected double getBlockRestitutionFactor() {
+		return 0.24;
+	}
+	
 }

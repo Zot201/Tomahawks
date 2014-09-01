@@ -7,7 +7,6 @@ import java.util.Set;
 import net.minecraft.item.Item;
 import net.minecraftforge.common.config.Configuration;
 import zotmc.tomahawk.util.TransformedSet;
-import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -16,6 +15,8 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
+import cpw.mods.fml.common.registry.GameData;
 
 public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, String> {
 
@@ -38,28 +39,25 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 	}
 	
 	
-	private ItemSet items;
-	
-	public ItemSet items() {
+	private Configurable<Set<Item>> items;
+	public Configurable<Set<Item>> asItems() {
 		return items != null ? items : (items = new ItemSet());
 	}
 	
-	public class ItemSet extends Configurable<Set<Item>> {
-		
+	private class ItemSet extends Configurable<Set<Item>> {
 		private final Function<Item, String> toString = new Function<Item, String>() {
 			@Override public String apply(Item input) {
-				return Utils.getItemRegistry().getNameForObject(input);
+				return GameData.getItemRegistry().getNameForObject(input);
 			}
 		};
 		
 		private final Function<String, Item> valueOf = new Function<String, Item>() {
 			@Override public Item apply(String input) {
-				return Utils.getItemRegistry().getRaw(input);
+				return GameData.getItemRegistry().getRaw(input);
 			}
 		};
 		
 		private Set<Item> value = Sets.filter(new TransformedSet<String, Item>() {
-			
 			@Override protected Set<String> backing() {
 				return ConfigurableItemIdSet.this.value;
 			}
@@ -77,9 +75,7 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 			@Override public boolean remove(Object o) {
 				throw new UnsupportedOperationException();
 			}
-			
 		}, Predicates.notNull());
-		
 		
 		private ItemSet() {
 			super("", "");
@@ -88,7 +84,6 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 		@Override public Set<Item> get() {
 			return value;
 		}
-		
 		@Override Configurable<Set<Item>> set(Set<Item> value) {
 			ConfigurableItemIdSet.this.set(ImmutableSet
 					.<String>builder()
@@ -103,15 +98,12 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 			return this;
 		}
 		
-		
-		@Deprecated @Override void load(Configuration configFile) {
+		@Override void load(Configuration configFile) {
 			throw new UnsupportedOperationException();
 		}
-		
-		@Deprecated @Override void save(Configuration configFile) {
+		@Override void save(Configuration configFile) {
 			throw new UnsupportedOperationException();
 		}
-		
 	}
 	
 }

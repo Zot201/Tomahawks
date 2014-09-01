@@ -18,6 +18,7 @@ public class GuiEmbededList extends GuiListExtended {
 	
 	private final GuiScreen parent;
 	private final List<IGuiListEntry> entries = Lists.newArrayList();
+	private final IGuiListEntry emptyLine = new GuiPropCat("");
 	
 	public GuiEmbededList(GuiScreen parent) {
 		super(mc(), parent.width, parent.height, 33, parent.height - 32, 20);
@@ -33,11 +34,11 @@ public class GuiEmbededList extends GuiListExtended {
 	
 	
 	@Override public IGuiListEntry getListEntry(int index) {
-		return entries.get(index);
+		return index == entries.size() ? emptyLine : entries.get(index);
 	}
 
 	@Override protected int getSize() {
-		return entries.size();
+		return entries.size() + 1;
 	}
 	
 	@Override protected int getScrollBarX() {
