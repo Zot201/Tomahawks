@@ -1,11 +1,6 @@
 package zotmc.tomahawk.transform;
 
 import static com.google.common.base.Preconditions.checkState;
-import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
-
-import java.util.List;
-
 import net.minecraft.launchwrapper.IClassTransformer;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,47 +16,48 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
 import zotmc.tomahawk.data.AsmData;
+import zotmc.tomahawk.util.Messod;
+import zotmc.tomahawk.util.Typo;
 
-import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 
 abstract class InsnCombinePointable implements IClassTransformer {
 	
 	private final Logger log = LogManager.getFormatterLogger(AsmData.MODID);
+	
 	private final int combiningOpcode;
+	private final Typo targetType;
+	private final Messod targetMethod;
 	
-	protected InsnCombinePointable(int combiningOpcode) {
+	protected InsnCombinePointable(int combiningOpcode, Typo targetType, Messod targetMethod) {
 		this.combiningOpcode = combiningOpcode;
+		this.targetType = targetType;
+		this.targetMethod = targetMethod;
 	}
-	
-	protected abstract String targetClass();
-	
-	protected abstract List<String> targetMethod();
 	
 	protected abstract boolean isTargetInsn(AbstractInsnNode insnNode);
 	
-	void checkTranformation() {
-		try {
-			Class.forName(targetClass());
-			checkState(LoadingPluginTomahawk.transformed.contains(targetClass()));
-		} catch (ClassNotFoundException ignored) { }
-	}
-	
-	
 	
 	@Override public byte[] transform(String name, String transformedName, byte[] basicClass) {
-		return !transformedName.equals(targetClass()) ? basicClass : patch(basicClass);
+		try {
+			return !targetType.isClass(transformedName) ? basicClass : patch(basicClass);
+		} catch (Throwable e) {
+			log.catching(e);
+			throw Throwables.propagate(e);
+		}
 	}
 	
-	private byte[] patch(byte[] basicClass) {
-		log.info("Patching %s.{%s}...", targetClass(), Joiner.on(", ").join(targetMethod()));
+	protected byte[] patch(byte[] basicClass) throws Throwable {
+		log.info("Patching %s", targetMethod);
 		
 		ClassNode classNode = new ClassNode();
 		new ClassReader(basicClass).accept(classNode, 0);
-		
+
 		for (MethodNode methodNode : classNode.methods)
-			if (targetMethod().contains(methodNode.name)) {
+			if (targetMethod.covers(methodNode)) {
 				InsnList list = methodNode.instructions;
 				
+				int count = 0;
 				for (AbstractInsnNode insnNode : list.toArray())
 					if (isTargetInsn(insnNode)) {
 						list.insertBefore(insnNode, new InsnNode(Opcodes.DUP));
@@ -70,17 +66,27 @@ abstract class InsnCombinePointable implements IClassTransformer {
 						after.add(new TypeInsnNode(Opcodes.INSTANCEOF, AsmData.POINTABLE_DESC));
 						after.add(new InsnNode(combiningOpcode));
 						list.insert(insnNode, after);
+						count++;
 					}
 				
-				ClassWriter cw = new ClassWriter(COMPUTE_FRAMES | COMPUTE_MAXS);
+				ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 				classNode.accept(cw);
 				
-				LoadingPluginTomahawk.transformed.add(targetClass());
+				LoadingPluginTomahawk.transformed.add(targetType);
+				log.info("Wrapped %d instruction%s in %s", count, count == 1 ? "" : "s", targetMethod);
 				return cw.toByteArray();
 			}
 		
-		String msg = String.format("Failed to patch %s.{%s}", targetClass(), Joiner.on(", ").join(targetMethod()));
-		throw new RuntimeException(msg);
+		log.error("Failed to patch %s", targetMethod);
+		return basicClass;
+	}
+	
+	
+	void checkTranformation() {
+		try {
+			targetType.toClass();
+			checkState(LoadingPluginTomahawk.transformed.contains(targetType), "Failed to patch %s", targetMethod);
+		} catch (ClassNotFoundException ignored) { }
 	}
 
 }

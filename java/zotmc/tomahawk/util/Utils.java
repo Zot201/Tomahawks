@@ -327,11 +327,14 @@ public class Utils {
 		return Optional.absent();
 	}
 	
-	public static Iterable<Class<?>> getTypes(Class<?> clz) {
+	public static Iterable<Class<?>> getTypes(final Class<?> clz) {
 		return hierarchy(clz, new Function<Class<?>, Iterable<Class<?>>>() {
 			final Set<Class<?>> seenInterfaces = Sets.newIdentityHashSet();
 			
 			@Override public Iterable<Class<?>> apply(Class<?> input) {
+				if (input == clz)
+					seenInterfaces.clear();
+				
 				Queue<Class<?>> ret = Queues.newArrayDeque();
 				for (Class<?> c : input.getInterfaces())
 					if (!seenInterfaces.contains(c)) {
@@ -360,41 +363,25 @@ public class Utils {
 		return null;
 	}
 	
-	public static Iterable<Entry<Method, Annotation>> getAnnotatedMethods(final Class<?> clz) {
+	public static Iterable<Entry<Method, Annotation>> getMethodAnnotations(final Class<?> clz) {
 		return new Iterable<Entry<Method, Annotation>>() { public Iterator<Entry<Method, Annotation>> iterator() {
-			return new AnnotatedMethodIterator(Utils.getTypes(clz), Iterators.forArray(clz.getMethods()));
+			return new AnnotatedMethodIterator(Iterators.forArray(clz.getDeclaredMethods()));
 		}};
 	}
 	private static class AnnotatedMethodIterator extends AbstractIterator<Entry<Method, Annotation>> {
-		final Iterable<Class<?>> types;
-		
 		final Iterator<Method> methodIterator;
-		Iterator<Class<?>> typeIterator;
-		Iterator<Annotation> annotationIterator;
-		
 		Method currentMethod;
-		Class<?> currentType;
-		
-		AnnotatedMethodIterator(Iterable<Class<?>> types, Iterator<Method> methodIterator) {
-			this.types = types;
+		Iterator<Annotation> annotationIterator = Iterators.emptyIterator();
+		AnnotatedMethodIterator(Iterator<Method> methodIterator) {
 			this.methodIterator = methodIterator;
 		}
 		@Override protected Entry<Method, Annotation> computeNext() {
 			while (true) {
-				if (annotationIterator != null && annotationIterator.hasNext())
+				if (annotationIterator.hasNext())
 					return Maps.immutableEntry(currentMethod, annotationIterator.next());
-				else if (typeIterator != null && typeIterator.hasNext()) {
-					currentType = typeIterator.next();
-					try {
-						annotationIterator = Iterators.forArray(currentType.getDeclaredMethod(
-								currentMethod.getName(),
-								currentMethod.getParameterTypes()
-						).getAnnotations());
-					} catch (NoSuchMethodException ignored) { }
-				}
 				else if (methodIterator.hasNext()) {
 					currentMethod = methodIterator.next();
-					typeIterator = types.iterator();
+					annotationIterator = Iterators.forArray(currentMethod.getAnnotations());
 				}
 				else
 					return endOfData();
@@ -424,13 +411,11 @@ public class Utils {
 	
 	// functional idioms
 	
-	private static <T> Iterable<T> hierarchy(T root, Function<? super T, ? extends Iterable<T>> subordinateFunction) {
-		final Iterator<T> itr = Iterators.singletonIterator(root);
-		final Function<? super T, Iterator<T>> func =
-				Functions.compose(Utils.<T>iterableFunction(), subordinateFunction);
+	private static <T> Iterable<T> hierarchy(final T root, Function<? super T, ? extends Iterable<T>> subordinateFunction) {
+		final Function<? super T, Iterator<T>> func = Functions.compose(Utils.<T>iterableFunction(), subordinateFunction);
 		
 		return new Iterable<T>() { public Iterator<T> iterator() {
-			return new HierarchyIterator<>(itr, func);
+			return new HierarchyIterator<>(Iterators.singletonIterator(root), func);
 		}};
 	}
 	private static class HierarchyIterator<T> extends AbstractIterator<T> {
@@ -490,6 +475,14 @@ public class Utils {
 		return Iterables.filter(Arrays.asList(a), predicate);
 	}
 	
+	public static <K1, K2, V> Iterable<Entry<K2, V>> transformKeys(Map<K1, V> map, final Function<? super K1, K2> function) {
+		return Iterables.transform(map.entrySet(), new Function<Entry<K1, V>, Entry<K2, V>>() {
+			@Override public Entry<K2, V> apply(Entry<K1, V> input) {
+				return Maps.immutableEntry(function.apply(input.getKey()), input.getValue());
+			}
+		});
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static <F> Function<F, String> toStringFunction() {
 		return (Function<F, String>) Functions.toStringFunction();
@@ -501,17 +494,6 @@ public class Utils {
 	private enum EmptyRunnable implements Runnable {
 		INSTANCE;
 		@Override public void run() { }
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T extends Enum<T>> Function<T, String> enumToName() {
-		return (Function<T, String>) EnumToName.INSTANCE;
-	}
-	private enum EnumToName implements Function<Enum<?>, String> {
-		INSTANCE;
-		@Override public String apply(Enum<?> input) {
-			return input.name();
-		}
 	}
 	
 	public static Function<String, Integer> integerParser() {

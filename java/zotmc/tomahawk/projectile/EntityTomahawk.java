@@ -268,22 +268,22 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		
 		super.onEntityUpdate();
 		
-		/*if (!worldObj.isRemote) {
+		if (!worldObj.isRemote) {
 			phy4j().debug("====On Update====");
 			phy4j().debug("Entity ID:    %d", getEntityId());
 			phy4j().debug("Tick Existed: %d", ticksExisted);
 			phy4j().debug("State:        %s", state.get());
-			phy4j().debug("Pos Ground:   %s", posGround);
+			phy4j().debug("In Tile Pos:   %s", inTilePos);
 			phy4j().debug("Pos:          %.1s", pos);
 			phy4j().debug("Motion:       %.3s", entityMotion);
 			phy4j().debug("Rotation Yaw: %#.1s", entityRotationYaw);
 			phy4j().debug("Rotation:     %#.1s", rotation);
-		}*/
+		}
 		
 		ticker.run();
 		
-		/*if (!worldObj.isRemote)
-			phy4j().debug("");*/
+		if (!worldObj.isRemote)
+			phy4j().debug("");
 		
 		setPosition(posX, posY, posZ);
 	}

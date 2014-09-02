@@ -399,7 +399,7 @@ public class TickerTomahawk implements Runnable {
 			
 			tickRebounce(mop, hawk.getEntityRestitutionFactor());
 			
-			hawk.afterHit.set(0);
+			Props.increment(hawk.afterHit);
 			
 			if (hawk.isFragile.get())
 				hawk.startBreaking();
@@ -412,7 +412,7 @@ public class TickerTomahawk implements Runnable {
 		}
 	}
 	
-	protected void tickBlockImpact(final MovingObjectPosition mop) {
+	protected void tickBlockImpact(MovingObjectPosition mop) {
 		boolean setInGround = hawk.state.get() != ON_GROUND;
 		
 		if (setInGround) {
@@ -430,16 +430,7 @@ public class TickerTomahawk implements Runnable {
 		if (setInGround) {
 			//debugInfo(null, "SET IN GROUND");
 			
-			final ItemStack item = hawk.item.get();
-			
-			if (item != null && hawk.worldObj instanceof WorldServer)
-				auxiliary(new Runnable() { public void run() {
-					item.getItem().onBlockStartBreak(item,
-							mop.blockX, mop.blockY, mop.blockZ,
-							hawk.createFakePlayer((WorldServer) hawk.worldObj)
-					);
-				}});
-			
+			onItemUse(mop);
 			
 			{
 				hawk.inTilePos.setBlockPos(mop);
@@ -471,6 +462,8 @@ public class TickerTomahawk implements Runnable {
 		else {
 			mop.hitInfo = SideHit.of(mop.sideHit).asVec3d();
 			
+			onItemUse(mop);
+			
 			tickRebounce(mop, hawk.getBlockRestitutionFactor());
 			
 			if (motion.norm2() < 1/9D) {
@@ -488,6 +481,18 @@ public class TickerTomahawk implements Runnable {
 				);
 			}
 		}
+	}
+	
+	protected void onItemUse(final MovingObjectPosition mop) {
+		final ItemStack item = hawk.item.get();
+		
+		if (item != null && hawk.worldObj instanceof WorldServer)
+			auxiliary(new Runnable() { public void run() {
+				Vec3 vec = mop.hitVec;
+				item.getItem().onItemUse(item, hawk.createFakePlayer((WorldServer) hawk.worldObj), hawk.worldObj,
+						mop.blockX, mop.blockY, mop.blockZ, mop.sideHit,
+						(float) vec.xCoord - mop.blockX, (float) vec.yCoord - mop.blockY, (float) vec.zCoord - mop.blockZ);
+			}});
 	}
 	
 	protected void tickRebounce(MovingObjectPosition mop, double f) {
@@ -543,7 +548,7 @@ public class TickerTomahawk implements Runnable {
 		
 		change.addRadians(motion.yaw());
 		if (Math.abs(change.toRadians()) > PI / 2) {
-			Props.toggle(hawk.isForwardSpin);
+			//Props.toggle(hawk.isForwardSpin);
 			Props.toggle(hawk.isRolled);
 			hawk.rotation.addDegrees(180);
 		}

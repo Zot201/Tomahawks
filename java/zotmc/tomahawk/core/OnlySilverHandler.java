@@ -19,7 +19,7 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 	
 	static void init() throws Throwable {
 		Class.forName(OnlySilver.ONLY_SILVER_REGISTRY)
-			.getMethod(OnlySilver.REGISTER_WEAPON_FUNCTION, DamageSource.class, Function.class)
+			.getMethod(OnlySilver.REGISTER_WEAPON_FUNCTION, String.class, Function.class)
 			.invoke(null, "thrown", new OnlySilverHandler());
 	}
 	

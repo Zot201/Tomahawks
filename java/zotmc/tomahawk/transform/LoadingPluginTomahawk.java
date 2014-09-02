@@ -3,6 +3,8 @@ package zotmc.tomahawk.transform;
 import java.util.Map;
 import java.util.Set;
 
+import zotmc.tomahawk.util.Typo;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 
@@ -32,7 +34,7 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 	}
 	
 	
-	static Set<String> transformed = Sets.newHashSet();
+	static final Set<Typo> transformed = Sets.newHashSet();
 	
 	private static void postInit() {
 		for (String s : new LoadingPluginTomahawk().getASMTransformerClass())
@@ -44,8 +46,6 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 			} catch (Throwable e) {
 				throw Throwables.propagate(e);
 			}
-		
-		transformed = null;
 	}
 	
 }

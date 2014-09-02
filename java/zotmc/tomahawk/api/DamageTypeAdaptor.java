@@ -2,6 +2,7 @@ package zotmc.tomahawk.api;
 
 import static cpw.mods.fml.common.eventhandler.EventPriority.HIGHEST;
 
+import java.lang.reflect.Field;
 import java.util.Set;
 
 import net.minecraft.util.DamageSource;
@@ -16,6 +17,7 @@ import zotmc.tomahawk.util.Fields;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 
 import cpw.mods.fml.common.Loader;
@@ -116,9 +118,21 @@ public class DamageTypeAdaptor extends EventBus {
 			if (listener instanceof ASMEventHandler) {
 				ASMEventHandler a = (ASMEventHandler) listener;
 				
-				if (ReflData.OWNER.isPresent()
-						&& modContainers.contains(Fields.<ModContainer>get(a, ReflData.OWNER.get()))
-						|| namePredicate.apply(event.getClass().getName()))
+				boolean isTarget;
+				try {
+					isTarget = ReflData.OWNER.isPresent()
+							&& modContainers.contains(ReflData.OWNER.get().get(a));
+					
+					if (!isTarget && !namePatterns.isEmpty()) {
+						IEventListener handler = (IEventListener) ReflData.HANDLER.get(a);
+						Field f = handler.getClass().getDeclaredField(ReflData.INSTANCE);
+						isTarget = namePredicate.apply(f.get(handler).getClass().getName());
+					}
+				} catch (Throwable e) {
+					throw Throwables.propagate(e);
+				}
+				
+				if (isTarget)
 					a.invoke(event);
 			}
 		

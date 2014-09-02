@@ -2,8 +2,6 @@ package zotmc.tomahawk.config;
 
 import java.util.Set;
 
-import zotmc.tomahawk.util.Utils;
-
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
@@ -23,7 +21,11 @@ public class ConfigurableEnumSet<E extends Enum<E>> extends ConfigurableStringLi
 	}
 	
 	@Override protected Function<E, String> toStringFunction() {
-		return Utils.enumToName();
+		return new Function<E, String>() {
+			@Override public String apply(E input) {
+				return input.name();
+			}
+		};
 	}
 	
 	@Override protected Function<String, E> valueOfFunction() {

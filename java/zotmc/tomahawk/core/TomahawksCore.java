@@ -1,5 +1,6 @@
 package zotmc.tomahawk.core;
 
+import static cpw.mods.fml.common.eventhandler.EventPriority.HIGH;
 import static cpw.mods.fml.relauncher.Side.CLIENT;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_DEPENDENCIES;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_GUI_FACTORY;
@@ -129,9 +130,20 @@ public class TomahawksCore {
 			TomahawksCore.instance.log.catching(e);
 		}
 		
-		if (Loader.isModLoaded(MoreEnchants.MODID))
-			DamageTypeAdaptor.instance().delegateByNamePattern(MoreEnchants.NAME_PATTERN);
 		
+		if (Loader.isModLoaded(AdditionalEnchantments.MODID)) {
+			if (Utils.MC_VERSION.isAtLeast("1.7.2"))
+				DamageTypeAdaptor.instance().delegateByModid(AdditionalEnchantments.MODID);
+			else
+				DamageTypeAdaptor.instance().delegateByNamePattern(AdditionalEnchantments.NAME_PATTERN);
+		}
+		
+		if (Loader.isModLoaded(MoreEnchants.MODID)) {
+			if (Utils.MC_VERSION.isAtLeast("1.7.2"))
+				DamageTypeAdaptor.instance().delegateByModid(MoreEnchants.MODID);
+			else
+				DamageTypeAdaptor.instance().delegateByNamePattern(MoreEnchants.NAME_PATTERN);
+		}
 		
 		if (Loader.isModLoaded(OnlySilver.MODID) && Utils.MC_VERSION.isAtLeast("1.7.2"))
 			try {
@@ -142,18 +154,6 @@ public class TomahawksCore {
 	}
 	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
-		if (Loader.isModLoaded(AdditionalEnchantments.MODID))
-			try {
-				DamageTypeAdaptor.instance().registerDirectly(
-						Class.forName(AdditionalEnchantments.VORPAL_EVENT_HOOK)
-							.getConstructor()
-							.newInstance()
-				);
-				
-			} catch (Throwable e) {
-				TomahawksCore.instance.log.catching(e);
-			}
-		
 		Utils.invokeDeclared(LoadingPluginTomahawk.class, "postInit");
 	}
 	
@@ -170,7 +170,8 @@ public class TomahawksCore {
 	}
 	
 	
-	@SubscribeEvent public void onPlayerInteract(PlayerInteractEvent event) {
+	@SubscribeEvent(priority = HIGH)
+	public void onPlayerInteract(PlayerInteractEvent event) {
 		if (event.action == Action.RIGHT_CLICK_AIR) {
 			EntityPlayer player = event.entityPlayer;
 			ItemStack item = player.getHeldItem();

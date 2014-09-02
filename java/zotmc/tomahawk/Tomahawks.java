@@ -46,7 +46,7 @@ public class Tomahawks {
 			@Category public WeaponCategory category() {
 				return WeaponCategory.AXE;
 			}
-			@ConfigState protected boolean isEnabled() {
+			@ConfigState public boolean isEnabled() {
 				return Config.current().commonAxesThrowing.get();
 			}
 		});
@@ -57,10 +57,10 @@ public class Tomahawks {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.AXE;
 					}
-					@ConfigState protected boolean isEnabled() {
+					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCHatchetsThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item) {
+					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
 						return false;
 					}
 				});
@@ -72,7 +72,7 @@ public class Tomahawks {
 					public EntityLumberAxe(WeaponDispenseEvent event) {
 						super(event);
 					}
-					@Override protected float getDragFactor() {
+					@Override public float getDragFactor() {
 						return 1.2F * super.getDragFactor();
 					}
 				}
@@ -80,10 +80,10 @@ public class Tomahawks {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.AXE;
 					}
-					@ConfigState protected boolean isEnabled() {
+					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCLumerAxesThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item) {
+					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
 						return false;
 					}
 					@InitialSpeed public float getInitialSpeed(ItemStack item) {
@@ -104,7 +104,7 @@ public class Tomahawks {
 					@ConfigState protected boolean isEnabled() {
 						return Config.current().tiCHammersThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item) {
+					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
 						return false;
 					}
 				});*/
@@ -119,13 +119,13 @@ public class Tomahawks {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.FRYPAN;
 					}
-					@ConfigState protected boolean isEnabled() {
+					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCFryingPansThrowing.get();
 					}
-					@HitSound public SoundType getHitSound() {
+					@HitSound public SoundType getHitSound(ItemStack item) {
 						return hitSound;
 					}
-					@Replica public boolean isReplicable(ItemStack item) {
+					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
 						return false;
 					}
 				});

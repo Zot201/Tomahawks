@@ -49,10 +49,10 @@ public enum WeaponCategory implements ItemHandler {
 		return true;
 	}
 	@Override public Entity createProjectile(WeaponLaunchEvent event) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(toString());
 	}
 	@Override public Entity createDispenserProjectile(WeaponDispenseEvent event) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(toString());
 	}
 	@Override public float getInitialSpeed(ItemStack item) {
 		return 2.11F;

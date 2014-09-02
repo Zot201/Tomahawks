@@ -33,7 +33,7 @@ public class Refls {
 				return f;
 			} catch (Throwable ignored) { }
 		
-		throw new UnknownFieldException(clz.getName() + ".{" + Joiner.on(", ").join(names) + "}");
+		throw new UnknownFieldException(clz.getName() + ".[" + Joiner.on(", ").join(names) + "]");
 	}
 	
 	
@@ -58,7 +58,7 @@ public class Refls {
 				} catch (Throwable ignored) { }
 			
 			throw new UnknownMethodException(String.format(
-					"%s.{%s}(%s)",
+					"%s.[%s](%s)",
 					clz.getName(),
 					Joiner.on(", ").join(names),
 					Joiner.on(", ").join(Utils.transform(parameterTypes, ClassNameFunction.INSTANCE))

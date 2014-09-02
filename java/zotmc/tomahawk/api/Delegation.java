@@ -40,7 +40,7 @@ public class Delegation {
 	}
 	
 	@Override public String toString() {
-		return "delegation <" + delegatee + " : " + method + ">";
+		return method.getName();
 	}
 	
 	

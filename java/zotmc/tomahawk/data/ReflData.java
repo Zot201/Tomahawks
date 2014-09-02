@@ -87,8 +87,12 @@ public class ReflData {
 		}
 	}
 	
+	public static final String
+	INSTANCE = "instance";
+	
 	public static final Field
 	BUS_ID = Utils.getDeclaredField(EventBus.class, "busID"),
+	HANDLER = Utils.getDeclaredField(ASMEventHandler.class, "handler"),
 	REGISTRY_OBJECTS = Refls.findField(RegistrySimple.class, "registryObjects", "field_82596_a"),
 	SIN_TABLE = Refls.findField(MathHelper.class, "SIN_TABLE", "field_76144_a");
 	
