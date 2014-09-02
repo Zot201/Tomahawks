@@ -12,6 +12,7 @@ import net.minecraft.block.Block.SoundType;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.ConfigState;
 import zotmc.tomahawk.api.Launchable.DispenseFactory;
@@ -33,6 +34,7 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.registry.EntityRegistry;
 
 @Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES, guiFactory = GUI_FACTORY)
 public class Tomahawks {
@@ -65,17 +67,7 @@ public class Tomahawks {
 					}
 				});
 				
-				class EntityLumberAxe extends EntityTomahawk {
-					public EntityLumberAxe(WeaponLaunchEvent event) {
-						super(event);
-					}
-					public EntityLumberAxe(WeaponDispenseEvent event) {
-						super(event);
-					}
-					@Override public float getDragFactor() {
-						return 1.2F * super.getDragFactor();
-					}
-				}
+				EntityRegistry.registerModEntity(EntityLumberAxe.class, "lumberAxe", 0, this, 64, 18, true);
 				TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.LUMBER_AXE), new Object() {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.AXE;
@@ -133,7 +125,21 @@ public class Tomahawks {
 			} catch (Throwable e) {
 				TomahawksCore.instance.log.catching(e);
 			}
-		
+	}
+	
+	public static class EntityLumberAxe extends EntityTomahawk {
+		public EntityLumberAxe(World world) {
+			super(world);
+		}
+		public EntityLumberAxe(WeaponLaunchEvent event) {
+			super(event);
+		}
+		public EntityLumberAxe(WeaponDispenseEvent event) {
+			super(event);
+		}
+		@Override protected float getDragFactor() {
+			return 1.2F * super.getDragFactor();
+		}
 	}
 
 }

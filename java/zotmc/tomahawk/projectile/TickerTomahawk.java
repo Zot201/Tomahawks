@@ -410,6 +410,8 @@ public class TickerTomahawk implements Runnable {
 					hawk.playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
 			}
 		}
+		
+		tickNoImpact();
 	}
 	
 	protected void tickBlockImpact(MovingObjectPosition mop) {

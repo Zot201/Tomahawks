@@ -389,6 +389,11 @@ public class Utils {
 		}
 	}
 	
+	public static void initialize(Class<?>... a) {
+		for (Class<?> c : a)
+			c.getMethods();
+	}
+	
 	
 	
 	// asm

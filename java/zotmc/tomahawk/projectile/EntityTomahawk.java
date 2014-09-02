@@ -1,6 +1,5 @@
 package zotmc.tomahawk.projectile;
 
-import static java.util.concurrent.ThreadLocalRandom.current;
 import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
 import static zotmc.tomahawk.api.PickUpType.CREATIVE;
 import static zotmc.tomahawk.api.PickUpType.SURVIVAL;
@@ -13,6 +12,7 @@ import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_AIR;
 
 import java.lang.ref.WeakReference;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
@@ -73,9 +73,9 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	
-	
-	public final float aRoll = worldObj.isRemote ? (float) current().nextGaussian() * 15/2F : 0;
-	public final float bRoll = worldObj.isRemote ? (float) current().nextGaussian() * 1/2F : 0;
+	public final float
+	aRoll = worldObj.isRemote ? (float) ThreadLocalRandom.current().nextGaussian() * 15/2F : 0,
+	bRoll = worldObj.isRemote ? (float) ThreadLocalRandom.current().nextGaussian() * 1/2F : 0;
 	
 	public final Vec3d entityMotion = EntityGeometry.getMotion(this);
 	public final Angle entityRotationYaw = EntityGeometry.getRotationYaw(this);
@@ -268,7 +268,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		
 		super.onEntityUpdate();
 		
-		if (!worldObj.isRemote) {
+		/*if (!worldObj.isRemote) {
 			phy4j().debug("====On Update====");
 			phy4j().debug("Entity ID:    %d", getEntityId());
 			phy4j().debug("Tick Existed: %d", ticksExisted);
@@ -278,12 +278,12 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 			phy4j().debug("Motion:       %.3s", entityMotion);
 			phy4j().debug("Rotation Yaw: %#.1s", entityRotationYaw);
 			phy4j().debug("Rotation:     %#.1s", rotation);
-		}
+		}*/
 		
 		ticker.run();
 		
-		if (!worldObj.isRemote)
-			phy4j().debug("");
+		/*if (!worldObj.isRemote)
+			phy4j().debug("");*/
 		
 		setPosition(posX, posY, posZ);
 	}

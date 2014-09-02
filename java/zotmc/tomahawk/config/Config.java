@@ -36,7 +36,7 @@ public class Config {
 	@ApplyHot @Core
 	public final Configurable<Boolean>
 	goldenFusion = new ConfigurableBoolean(ENCHS, "goldenFusion"),
-	igniteFireRespect = new ConfigurableBoolean(ENCHS, "igniteFireRepect");
+	igniteFireRespect = new ConfigurableBoolean(ENCHS, "igniteFireRepect").set(true);
 	@Core
 	public final Configurable<Integer>
 	replica = new ConfigurableInteger(ENCHS, "replica").set(143);

@@ -14,7 +14,7 @@ public class ModData {
 		public static final String
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
-		VERSION = "1.4.1.8α-" + Loader.MC_VERSION,
+		VERSION = "1.4.2.0-" + Loader.MC_VERSION,
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
 		

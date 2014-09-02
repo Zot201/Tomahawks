@@ -15,7 +15,7 @@ import com.google.common.reflect.Reflection;
 public class LogTomahawk {
 	
 	public enum LogCategory {
-		MOB, ENT, PHY, REN, API;
+		ENT, PHY, REN, API;
 		
 		private Logger logger;
 		public Logger getLogger() {
@@ -27,9 +27,6 @@ public class LogTomahawk {
 		}
 	}
 	
-	public static Logger mob4j() {
-		return LogCategory.MOB.getLogger();
-	}
 	public static Logger ent4j() {
 		return LogCategory.ENT.getLogger();
 	}

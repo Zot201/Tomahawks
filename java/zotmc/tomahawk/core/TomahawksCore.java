@@ -48,9 +48,12 @@ import zotmc.tomahawk.ench.EnchReplica;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.projectile.RenderTomahawk;
+import zotmc.tomahawk.projectile.TickerTomahawk;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
+import zotmc.tomahawk.util.geometry.HybridVec3d;
+import zotmc.tomahawk.util.prop.Props;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.MissingModsException;
@@ -101,9 +104,7 @@ public class TomahawksCore {
 		
 		Config.init(new Configuration(new File(event.getModConfigurationDirectory(), MODID + ".cfg")));
 		
-		EntityRegistry.registerModEntity(
-				EntityTomahawk.class, "tomahawk", 0, this, 64, 18, true
-		);
+		EntityRegistry.registerModEntity(EntityTomahawk.class, "tomahawk", 0, this, 64, 18, true);
 		Utils.EntityLists.stringToClassMapping().put("axetomahawk.tomahawk", EntityTomahawk.class); // for backward compatibility
 		
 		int id = Config.current().replica.get();
@@ -154,6 +155,8 @@ public class TomahawksCore {
 	}
 	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
+		Utils.initialize(EntityTomahawk.class, TickerTomahawk.class, HybridVec3d.class, Props.class);
+		
 		Utils.invokeDeclared(LoadingPluginTomahawk.class, "postInit");
 	}
 	
