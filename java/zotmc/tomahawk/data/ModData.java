@@ -14,7 +14,7 @@ public class ModData {
 		public static final String
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
-		VERSION = "1.4.2.0-" + Loader.MC_VERSION,
+		VERSION = "1.4.2.1-" + Loader.MC_VERSION,
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
 		
@@ -47,13 +47,13 @@ public class ModData {
 	@Requirements({"1.7.2 = 1.2b", "1.6.2 = 1.2a"})
 	public static class AdditionalEnchantments {
 		@Modid public static final String MODID = "AdditionalEnchantments";
-		public static final String NAME_PATTERN = "^ak.AdditionalEnchantments.*$";
+		public static final String NAME_PATTERN = "^ak\\.AdditionalEnchantments\\..*$";
 	}
 	
 	@Requirements({"1.7.2 = 1.3.0", "1.6.2 = 1.2.5"})
 	public static class MoreEnchants {
 		@Modid public static final String MODID = "MoreEnchants";
-		public static final String NAME_PATTERN = "^com.demoxin.minecraft.moreenchants.*$";
+		public static final String NAME_PATTERN = "^com\\.demoxin\\.minecraft\\.moreenchants\\..*$";
 	}
 	
 	@Requirements("1.7.2 = 1.9.4")
