@@ -40,7 +40,7 @@ import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.core.LogTomahawk;
-import zotmc.tomahawk.core.PositionTracker;
+import zotmc.tomahawk.core.PlayerTracker;
 import zotmc.tomahawk.core.TomahawkImpls;
 import zotmc.tomahawk.util.Fields;
 import zotmc.tomahawk.util.IdentityBlockMeta;
@@ -64,8 +64,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		IN_AIR,
 		IN_GROUND,
 		NO_REBOUNCE,
-		ON_GROUND,
-		ON_RELEASE;
+		ON_GROUND;
 		
 		public boolean isStationary() {
 			return (ordinal() & 1) == 1;
@@ -138,9 +137,9 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		setSize(0.6F, 0.6F);
         //setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
 		
-		if (!world.isRemote) {
+		{
 			if (thrower instanceof EntityPlayer)
-				PositionTracker.get((EntityPlayer) thrower).getCurrentMotion().addTo(entityMotion);
+				PlayerTracker.get((EntityPlayer) thrower).getLastMotion().addTo(entityMotion);
 			else
 				EntityGeometry.getMotion(thrower).addTo(entityMotion);
 			
@@ -297,51 +296,46 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	@Override public void onCollideWithPlayer(EntityPlayer player) {
-		if (!worldObj.isRemote && !isFixed.get() && readyForPickUp()) {
-			boolean creative = player.capabilities.isCreativeMode;
+		if (!worldObj.isRemote && !isFixed.get() && readyForPickUp())
+			attemptPickingUp(player, player == shootingEntity);
+	}
+	
+	public boolean onLeftClick(EntityPlayer player) {
+		if (!worldObj.isRemote && (!isFixed.get() || player.isSneaking()) && state.get().isStationary())
+			attemptPickingUp(player, true);
+		
+		return true; // return true to indicate no further process
+	}
+	
+	public boolean attemptPickingUp(EntityPlayer player, boolean flag) {
+		boolean creative = player.capabilities.isCreativeMode;
+		
+		if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
+			PlayerTracker tracker = null;
 			
-			if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
+			flag = flag || Config.current().freeRetrieval.get();
+			if (!flag) {
+				int t = (tracker = PlayerTracker.get(player)).getAfterInteract();
+				flag = t >= 0 && t < 1200;
+			}
+			
+			if (flag) {
 				ItemStack item = this.item.get();
 				
 				if (pickUpType.canBePickedUpBy(SURVIVAL)) {
 					if (player.getCurrentEquippedItem() == null)
 						player.setCurrentItemOrArmor(0, item);
 					else if (!player.inventory.addItemStackToInventory(item))
-						return;
+						return false;
 				}
 				
 				playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1) * 2);
 				player.onItemPickup(this, item.stackSize);
 				setDead();
+				
+				(tracker != null ? tracker : PlayerTracker.get(player)).onInteract();
+				return true;
 			}
-		}
-	}
-	
-	public boolean onLeftClick(EntityPlayer player) {
-		if (!worldObj.isRemote && (!isFixed.get() || player.isSneaking()) && state.get().isStationary())
-			attemptPickup(player);
-		
-		return true; // return true to indicate no further process
-	}
-	
-	public boolean attemptPickup(EntityPlayer player) {
-		boolean creative = player.capabilities.isCreativeMode;
-		
-		if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
-			ItemStack item = this.item.get();
-			
-			if (pickUpType.canBePickedUpBy(SURVIVAL)) {
-				if (player.getCurrentEquippedItem() == null)
-					player.setCurrentItemOrArmor(0, item);
-				else if (!player.inventory.addItemStackToInventory(item))
-					return false;
-			}
-			
-			playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1) * 2);
-			player.onItemPickup(this, item.stackSize);
-			setDead();
-			
-			return true;
 		}
 		
 		return false;
@@ -352,6 +346,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 				&& pickUpType.canBePickedUpBy(player.capabilities.isCreativeMode ? CREATIVE : SURVIVAL)) {
 			Props.toggle(isFixed);
 			player.swingItem();
+			PlayerTracker.get(player).onInteract();
 			return true;
 		}
 		return false;
@@ -391,32 +386,36 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 			);
 	}
 	
-	protected void playHitSound(boolean isStationary, Block block, float hardness) {
-		if (!worldObj.isRemote) {
-			ItemStack item = this.item.get();
-			SoundType hitSound = TomahawkRegistry.getItemHandler(item).getHitSound(item);
+	public boolean playHitSound() {
+		ItemStack item = this.item.get();
+		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getHitSound(item);
+		
+		if (hitSound != null) {
+			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
+			return true;
+		}
+		return false;
+	}
+	
+	public void playBlockHitSound(boolean isStationary, Block block, Vec3i position) {
+		if (!playHitSound()) {
+			float hardness = position.getBlockHardness(worldObj, block);
 			
-			if (hitSound != null)
-				playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
-			else if (hardness < 1) {
-				if (!worldObj.isRemote)
-					playSound("random.bowhit",
-							1.4F, (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 3/5F
-					);
-			}
+			if (hardness < 1)
+				playSound("random.bowhit", 1.4F, (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 3/5F);
 			else {
-				hitSound = block.stepSound;
-				float vol = hitSound.getVolume() * 28 / hardness;
-				float pit = hitSound.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
+				SoundType s = block.stepSound;
+				float vol = s.getVolume() * 28 / hardness;
+				float pit = s.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
 				
 				if (!isStationary)
 					vol /= 6;
 				
 				int n = (int) vol;
 				for (int i = 0; i < n; i++)
-					playSound(hitSound.getBreakSound(), 1, pit);
+					playSound(s.getBreakSound(), 1, pit);
 				
-				playSound(hitSound.getBreakSound(), vol - n, pit);
+				playSound(s.getBreakSound(), vol - n, pit);
 				
 			}
 		}
@@ -429,15 +428,13 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	public int getLifespan() {
-		switch (pickUpType) {
-		case SURVIVAL:
+		if (pickUpType == SURVIVAL) {
 			ItemStack item = this.item.get();
-			return item == null ? 120 : item.getItem().getEntityLifespan(item, worldObj);
-		case ENCH:
-			return 120;
-		default:
-			return 1200;
+			if (item != null)
+				return item.getItem().getEntityLifespan(item, worldObj);
 		}
+		
+		return 1200;
 	}
 	
 	public boolean readyForPickUp() {

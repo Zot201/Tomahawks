@@ -36,7 +36,7 @@ public class TomahawkRegistry {
 	private static final Map<Class<? extends Item>, ItemHandler> computedHandlers = Maps.newIdentityHashMap();
 	
 	
-	public static void registerItemHandler(Class<?> itemType, Object handler) {
+	public synchronized static void registerItemHandler(Class<?> itemType, Object handler) {
 		checkState(!Loader.instance().hasReachedState(LoaderState.AVAILABLE));
 		checkNotNull(itemType);
 		checkNotNull(handler);
@@ -60,7 +60,7 @@ public class TomahawkRegistry {
 				
 				row.putAll(reg);
 				TomahawksCore.instance.log.info("Associated %s with %s involving %d item handling%s: %s",
-						itemType.getName(), handler, reg.size(), reg.size() == 1 ? "" : "s", toString(reg));
+						itemType, handler, reg.size(), reg.size() == 1 ? "" : "s", toString(reg));
 			}
 		}
 	}

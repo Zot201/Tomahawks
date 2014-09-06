@@ -1,6 +1,6 @@
 package zotmc.tomahawk.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,8 +29,12 @@ public final class Messod implements Predicate<MethodInfo> {
 		this.desc = desc;
 	}
 	
+	public Typo getOwner() {
+		return owner;
+	}
+	
 	public Messod desc(Object returnType, Object... argumentTypes) {
-		checkArgument(desc == null);
+		checkState(desc == null);
 		
 		Function<Object, Type> convert = new Function<Object, Type>() { public Type apply(Object input) {
 			if (input instanceof String)
@@ -103,5 +107,5 @@ public final class Messod implements Predicate<MethodInfo> {
 	@Override public String toString() {
 		return String.format("%s.[%s]", owner, Joiner.on(", ").join(names));
 	}
-
+	
 }

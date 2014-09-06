@@ -17,8 +17,6 @@ import static zotmc.tomahawk.util.geometry.SideHit.WEST;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
@@ -26,14 +24,15 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.WorldServer;
-import zotmc.tomahawk.api.TomahawkRegistry;
 import zotmc.tomahawk.core.TomahawkImpls;
 import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.Angle;
+import zotmc.tomahawk.util.geometry.MopBlockVec3i;
 import zotmc.tomahawk.util.geometry.NormalizedAngle;
 import zotmc.tomahawk.util.geometry.SideHit;
 import zotmc.tomahawk.util.geometry.Vec3d;
+import zotmc.tomahawk.util.geometry.Vec3i;
 import zotmc.tomahawk.util.prop.Props;
 
 import com.google.common.collect.Range;
@@ -136,10 +135,6 @@ public class TickerTomahawk implements Runnable {
 			
 		case NO_REBOUNCE:
 			tickNoRebounce();
-			break;
-			
-		case ON_RELEASE:
-			tickOnRelease();
 			break;
 			
 		default:
@@ -262,34 +257,6 @@ public class TickerTomahawk implements Runnable {
 			tickNoImpact();
 	}
 	
-	protected void tickOnRelease() {
-		hawk.state.set(IN_AIR); return;
-		
-		/*if (hawk.sideHit == -1) { // if accidently the sideHit has not been saved.
-			hawk.state.set(IN_AIR);
-			return;
-		}
-		
-		motion.add(SideHit.of(hawk.sideHit).asVec3d(), 1);
-		
-		if (hawk.posGround.getBlock(hawk.worldObj) == hawk.ground.get()) {
-			//TODO: improve algorithm
-			
-			//Vec3 pos0 = pos.toVec3();
-			motion.addY(-0.4);
-			pos.add(motion);
-			
-			if (hawk.worldObj.func_147461_a(hawk.boundingBox).size() > 0) {
-				hawk.state.set(NO_REBOUNCE);
-				hawk.onRelease(motion);
-			}
-		}
-		else {
-			hawk.state.set(IN_AIR);
-			hawk.onRelease(motion);
-		}*/
-	}
-	
 	protected void tickInAir() {
 		Props.increment(hawk.ticksInAir);
 		
@@ -403,12 +370,8 @@ public class TickerTomahawk implements Runnable {
 			
 			if (hawk.isFragile.get())
 				hawk.startBreaking();
-			else {
-				ItemStack item = hawk.item.get();
-				SoundType hitSound = TomahawkRegistry.getItemHandler(item).getHitSound(item);
-				if (hitSound != null)
-					hawk.playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
-			}
+			else if (!hawk.worldObj.isRemote)
+				hawk.playHitSound();
 		}
 		
 		tickNoImpact();
@@ -446,8 +409,8 @@ public class TickerTomahawk implements Runnable {
 				pos.subtract(motion, 0.05 / motion.norm());
 				
 				if (b.block.getMaterial() != Material.air) {
-					if (!hawk.isFragile.get())
-						hawk.playHitSound(true, b.block, hawk.inTilePos.getBlockHardness(hawk.worldObj, b.block));
+					if (!hawk.worldObj.isRemote && !hawk.isFragile.get())
+						hawk.playBlockHitSound(true, b.block, hawk.inTilePos);
 					hawk.state.set(IN_GROUND);
 					
 					hawk.inTilePos.onEntityCollidedWithBlock(hawk.worldObj, b.block, hawk);
@@ -476,11 +439,8 @@ public class TickerTomahawk implements Runnable {
 			if (hawk.isFragile.get())
 				hawk.startBreaking();
 			else {
-				Block block = hawk.worldObj.getBlock(mop.blockX, mop.blockY, mop.blockZ);
-				
-				hawk.playHitSound(false, block,
-						block.getBlockHardness(hawk.worldObj, mop.blockX, mop.blockY, mop.blockZ)
-				);
+				Vec3i p = new MopBlockVec3i(mop);
+				hawk.playBlockHitSound(false, p.getBlock(hawk.worldObj), p);
 			}
 		}
 	}
@@ -491,9 +451,11 @@ public class TickerTomahawk implements Runnable {
 		if (item != null && hawk.worldObj instanceof WorldServer)
 			auxiliary(new Runnable() { public void run() {
 				Vec3 vec = mop.hitVec;
-				item.getItem().onItemUse(item, hawk.createFakePlayer((WorldServer) hawk.worldObj), hawk.worldObj,
+				item.getItem().onItemUse(
+						item, hawk.createFakePlayer((WorldServer) hawk.worldObj), hawk.worldObj,
 						mop.blockX, mop.blockY, mop.blockZ, mop.sideHit,
-						(float) vec.xCoord - mop.blockX, (float) vec.yCoord - mop.blockY, (float) vec.zCoord - mop.blockZ);
+						(float) vec.xCoord - mop.blockX, (float) vec.yCoord - mop.blockY, (float) vec.zCoord - mop.blockZ
+				);
 			}});
 	}
 	

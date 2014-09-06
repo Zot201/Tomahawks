@@ -32,6 +32,9 @@ public class Config {
 	@ApplyHot @Core
 	public final ConfigurableItemIdSet
 	itemBlacklist = new ConfigurableItemIdSet(GENERAL, "axeBlacklist");
+	@ApplyHot @Core
+	public final Configurable<Boolean>
+	freeRetrieval = new ConfigurableBoolean(GENERAL, "freeRetrieval");
 	
 	@ApplyHot @Core
 	public final Configurable<Boolean>
@@ -64,9 +67,7 @@ public class Config {
 			throw new IllegalStateException("Already initialized");
 		
 		Config.configFile = checkNotNull(configFile);
-		
 		current = new Config().load().save();
-		
 	}
 	
 	static Config preserved() {

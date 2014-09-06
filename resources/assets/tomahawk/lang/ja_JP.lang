@@ -16,6 +16,7 @@ tomahawk.gui.config.saveProceed=セーブして続行
 tomahawk.gui.config.general=一般
 tomahawk.gui.config.commonAxesThrowing=通常斧投擲
 tomahawk.gui.config.throwableItems=投擲可能アイテム
+tomahawk.gui.config.freeRetrieval=自由回収
 
 tomahawk.gui.config.enchantments=エンチャント
 tomahawk.gui.config.igniteFireRespect=火属性アイテムの着火

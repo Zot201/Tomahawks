@@ -64,6 +64,7 @@ import com.google.common.collect.Sets;
 import com.mojang.authlib.GameProfile;
 
 import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.registry.GameData;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.common.versioning.VersionParser;
@@ -391,7 +392,11 @@ public class Utils {
 	
 	public static void initialize(Class<?>... a) {
 		for (Class<?> c : a)
-			c.getMethods();
+			try {
+				Class.forName(c.getName());
+			} catch (ClassNotFoundException e) {
+				throw Throwables.propagate(e);
+			}
 	}
 	
 	
@@ -548,16 +553,26 @@ public class Utils {
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.FIELD)
 	public @interface Modid { }
-	
+
+	/**
+	 * When applied to an outer class, this represents a map from building MC versions to the required MC versions.
+	 * When applied to an inner class, this represents a map from actual MC versions to the required mod versions.
+	 */
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.TYPE)
 	public @interface Requirements {
 		public String[] value();
 	}
 	
-	public static Set<ArtifactVersion> checkRequirements(Class<?> clz) {
+	public static Set<ArtifactVersion> checkRequirements(Class<?> clz, String mcString) {
 		Set<ArtifactVersion> missing = Sets.newHashSet();
 		
+		ModContainer mc = Loader.instance().getMinecraftModContainer();
+		ArtifactVersion m0 = check(clz, "Minecraft", new SimpleVersion(mcString), mc.getProcessedVersion());
+		if (m0 != null)
+			missing.add(m0);
+		
+		Map<String, ModContainer> mods = Loader.instance().getIndexedModList();
 		for (Class<?> c : clz.getDeclaredClasses()) {
 			String modid = null;
 			
@@ -571,28 +586,41 @@ public class Utils {
 				}
 			
 			if (modid != null && Loader.isModLoaded(modid)) {
-				Requirements requirements = c.getAnnotation(Requirements.class);
-				
-				if (requirements != null) {
-					for (String s : requirements.value()) {
-						List<String> entry = Splitter.on('=').trimResults().splitToList(s);
-						checkArgument(entry.size() == 2);
-						
-						if (MC_VERSION.isAtLeast(entry.get(0))) {
-							ArtifactVersion r =
-									VersionParser.parseVersionReference(modid + "@[" + entry.get(1) + ",)");
-							
-							if (!r.containsVersion(
-									Loader.instance().getIndexedModList().get(modid).getProcessedVersion()))
-								missing.add(r);
-							break;
-						}
-					}
-				}
+				ArtifactVersion m = check(c, modid, MC_VERSION, mods.get(modid).getProcessedVersion());
+				if (m != null)
+					missing.add(m);
 			}
 		}
 		
 		return missing;
+	}
+	
+	private static ArtifactVersion check(Class<?> c, String modid, SimpleVersion key, ArtifactVersion actual) {
+		Requirements requirements = c.getAnnotation(Requirements.class);
+		
+		if (requirements != null) {
+			for (String s : requirements.value()) {
+				List<String> entry = Splitter.on('=').trimResults().splitToList(s);
+				checkArgument(entry.size() == 2);
+				
+				if (key.isAtLeast(entry.get(0))) {
+					ArtifactVersion r = parse(modid, entry.get(1));
+					
+					if (!r.containsVersion(actual))
+						return r;
+					break;
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	private static ArtifactVersion parse(String modid, String versionRange) {
+		char c = versionRange.charAt(0);
+		if (c != '[' && c != '(')
+			versionRange = "[" + versionRange + ",)";
+		return VersionParser.parseVersionReference(modid + "@" + versionRange);
 	}
 	
 }

@@ -1,11 +1,12 @@
 package zotmc.tomahawk.core;
 
-import static cpw.mods.fml.common.eventhandler.EventPriority.HIGH;
+import static cpw.mods.fml.common.eventhandler.EventPriority.LOW;
 import static cpw.mods.fml.relauncher.Side.CLIENT;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_DEPENDENCIES;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_GUI_FACTORY;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_MODID;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_NAME;
+import static zotmc.tomahawk.data.ModData.AxeTomahawk.MC_STRING;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.MODID;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.VERSION;
 
@@ -36,6 +37,7 @@ import zotmc.tomahawk.api.DamageTypeAdaptor;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
 import zotmc.tomahawk.api.TomahawkRegistry;
+import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.config.GuiConfigScreenResolver;
@@ -50,9 +52,12 @@ import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.projectile.RenderTomahawk;
 import zotmc.tomahawk.projectile.TickerTomahawk;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
+import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
+import zotmc.tomahawk.util.geometry.CartesianVec3f;
 import zotmc.tomahawk.util.geometry.HybridVec3d;
+import zotmc.tomahawk.util.geometry.Vec3f;
 import zotmc.tomahawk.util.prop.Props;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.Loader;
@@ -83,7 +88,8 @@ public class TomahawksCore {
 	
 	
 	@EventHandler public void onConstruct(FMLConstructionEvent event) {
-		Set<ArtifactVersion> missing = Utils.checkRequirements(ModData.class);
+		Set<ArtifactVersion> missing = Utils.checkRequirements(ModData.class, MC_STRING);
+		
 		if (!missing.isEmpty())
 			throw new MissingModsException(missing);
 	}
@@ -155,7 +161,8 @@ public class TomahawksCore {
 	}
 	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
-		Utils.initialize(EntityTomahawk.class, TickerTomahawk.class, HybridVec3d.class, Props.class);
+		Utils.initialize(EntityTomahawk.class, TickerTomahawk.class, HybridVec3d.class, Props.class,
+				IdentityBlockMeta.class, WeaponLaunchEvent.class, WeaponDispenseEvent.class);
 		
 		Utils.invokeDeclared(LoadingPluginTomahawk.class, "postInit");
 	}
@@ -173,39 +180,56 @@ public class TomahawksCore {
 	}
 	
 	
-	@SubscribeEvent(priority = HIGH)
+	final Vec3f hit = new CartesianVec3f();
+	
+	@SubscribeEvent(priority = LOW)
 	public void onPlayerInteract(PlayerInteractEvent event) {
-		if (event.action == Action.RIGHT_CLICK_AIR) {
+		boolean rightClickBlock = event.action == Action.RIGHT_CLICK_BLOCK;
+		
+		if (rightClickBlock || event.action == Action.RIGHT_CLICK_AIR) {
 			EntityPlayer player = event.entityPlayer;
-			ItemStack item = player.getHeldItem();
+			PlayerTracker tracker = PlayerTracker.get(player);
 			
-			if (item != null && item.stackSize > 0 && TomahawkAPI.isLaunchable(item)) {
-				WeaponLaunchEvent launchEvent = new WeaponLaunchEvent(
-						player, Utils.itemStack(item, 1), TomahawkRegistry.getItemHandler(item));
+			if (tracker.getAfterInteract() != 0) {
+				ItemStack item = player.getHeldItem();
 				
-				boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
-				boolean creative = player.capabilities.isCreativeMode;
-				
-				if (replica) {
-					launchEvent.setPickUpType(PickUpType.ENCH);
-					launchEvent.isFragile = true;
-				}
-				else if (creative)
-					launchEvent.setPickUpType(PickUpType.CREATIVE);
-				
-				if (launchEvent.run()) {
-					if (!creative) {
-						if (replica)
-							item.damageItem(2, player);
-						else
-							item.stackSize--;
-						
-						if (item.stackSize == 0)
-							player.setCurrentItemOrArmor(0, null);
+				if (item != null && item.stackSize > 0 && TomahawkAPI.isLaunchable(item)) {
+					if (event.world.isRemote)
+						TomahawkImpls.setHit();
+					
+					if (rightClickBlock && TomahawkImpls.activateBlock(event, player, item, hit)) {
+		        		event.useBlock = Result.DENY;
+		        		return;
 					}
 					
-					event.useItem = Result.DENY;
-	        		event.useBlock = Result.DENY;
+					WeaponLaunchEvent launchEvent = new WeaponLaunchEvent(
+							player, Utils.itemStack(item, 1), TomahawkRegistry.getItemHandler(item));
+					
+					boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
+					boolean creative = player.capabilities.isCreativeMode;
+					
+					if (replica) {
+						launchEvent.setPickUpType(PickUpType.ENCH);
+						launchEvent.isFragile = true;
+					}
+					else if (creative)
+						launchEvent.setPickUpType(PickUpType.CREATIVE);
+					
+					if (launchEvent.run()) {
+						if (!creative) {
+							if (replica)
+								item.damageItem(2, player);
+							else
+								item.stackSize--;
+							
+							if (item.stackSize == 0)
+								player.setCurrentItemOrArmor(0, null);
+						}
+
+						event.useItem = Result.DENY;
+		        		event.useBlock = Result.DENY;
+		        		tracker.onInteract();
+					}
 				}
 			}
 		}
@@ -221,13 +245,13 @@ public class TomahawksCore {
 	}
 	
 	@SubscribeEvent public void onEntityConstruct(EntityConstructing event) {
-		if (event.entity.worldObj != null && !event.entity.worldObj.isRemote && event.entity instanceof EntityPlayer)
-			new PositionTracker((EntityPlayer) event.entity).register();
+		if (event.entity instanceof EntityPlayer)
+			new PlayerTracker((EntityPlayer) event.entity).register();
 	}
 	
 	@SubscribeEvent public void onLivingUpdate(LivingUpdateEvent event) {
-		if (!event.entity.worldObj.isRemote && event.entity instanceof EntityPlayer)
-			PositionTracker.get((EntityPlayer) event.entity).onUpdate();
+		if (event.entity instanceof EntityPlayer)
+			PlayerTracker.get((EntityPlayer) event.entity).onUpdate();
 	}
 	
 	@SubscribeEvent public void onAnvilUpdate(AnvilUpdateEvent event) {

@@ -43,6 +43,7 @@ public class GuiConfigScreenCore extends GuiConfigScreen {
 							);
 						}}
 				),
+				new GuiPropToggle(ConfigI18ns.FREE_RETRIEVAL, config.freeRetrieval),
 				
 				new GuiPropCat(ConfigI18ns.ENCHANTMENTS),
 				new GuiPropToggle(ConfigI18ns.IGNITE_FIRE_RESPECT, config.igniteFireRespect),

@@ -15,7 +15,8 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 	@Override public String[] getASMTransformerClass() {
 		return new String[] {
 				TransformerProcessUseEntity.class.getName(),
-				TransformerGetMouseOver.class.getName()
+				TransformerGetMouseOver.class.getName(),
+				TransformerActivateBlockOrUseItem.class.getName()
 		};
 	}
 	
@@ -39,8 +40,7 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 	private static void postInit() {
 		for (String s : new LoadingPluginTomahawk().getASMTransformerClass())
 			try {
-				InsnCombinePointable t = (InsnCombinePointable)
-						Class.forName(s).getConstructor().newInstance();
+				InsnCombine t = (InsnCombine) Class.forName(s).getConstructor().newInstance();
 				t.checkTranformation();
 				
 			} catch (Throwable e) {

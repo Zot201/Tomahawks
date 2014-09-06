@@ -45,8 +45,8 @@ public final class Typo implements Predicate<Type> {
 		return clz.equals(transformedName);
 	}
 	
-	public Class<?> toClass() throws ClassNotFoundException {
-		return Class.forName(clz);
+	public void initialize() throws ClassNotFoundException {
+		Class.forName(clz);
 	}
 	
 	

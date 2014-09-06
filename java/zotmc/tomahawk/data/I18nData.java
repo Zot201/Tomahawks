@@ -19,6 +19,7 @@ public class I18nData {
 		GENERAL = Utils.localize("tomahawk.gui.config.general"),
 		COMMON_AXES_THROWING = Utils.localize("tomahawk.gui.config.commonAxesThrowing"),
 		THROWABLE_ITEMS = Utils.localize("tomahawk.gui.config.throwableItems"),
+		FREE_RETRIEVAL = Utils.localize("tomahawk.gui.config.freeRetrieval"),
 		
 		ENCHANTMENTS = Utils.localize("tomahawk.gui.config.enchantments"),
 		GOLDEN_FUSION = Utils.localize("tomahawk.gui.config.goldenFusion"),

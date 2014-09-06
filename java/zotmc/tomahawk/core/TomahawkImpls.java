@@ -1,5 +1,6 @@
 package zotmc.tomahawk.core;
 
+import static cpw.mods.fml.relauncher.Side.CLIENT;
 import static net.minecraft.enchantment.Enchantment.fireAspect;
 import static net.minecraft.enchantment.Enchantment.knockback;
 
@@ -7,6 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -14,30 +17,52 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IEntityMultiPart;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.ContainerRepair;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S0BPacketAnimation;
+import net.minecraft.network.play.server.S23PacketBlockChange;
+import net.minecraft.server.management.ItemInWorldManager;
 import net.minecraft.stats.AchievementList;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AnvilUpdateEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import zotmc.tomahawk.projectile.DamageSourceTomahawk;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.Vec3d;
+import zotmc.tomahawk.util.geometry.Vec3f;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
+import cpw.mods.fml.common.eventhandler.Event;
+import cpw.mods.fml.relauncher.SideOnly;
+
 public class TomahawkImpls {
 	
+	@SideOnly(CLIENT)
+	public static void setHit() {
+		MovingObjectPosition m = Minecraft.getMinecraft().objectMouseOver;
+		if (m != null) {
+			Vec3 v = m.hitVec;
+			setHit((float) v.xCoord - m.blockX, (float) v.yCoord - m.blockY, (float) v.zCoord - m.blockZ);
+		}
+	}
+	
+	public static void setHit(float x, float y, float z) {
+		TomahawksCore.instance.hit.setValues(x, y, z);
+	}
+	
+	
 	/**
-	 * The implementation for tomahawks to mimic direct attack of players.
-	 * 
-	 * @see {@link EntityPlayer#attackTargetEntityWithCurrentItem(Entity)}
+	 * @see EntityPlayer#attackTargetEntityWithCurrentItem
 	 */
 	public static void onEntityImpactImpl(EntityTomahawk hawk, Vec3d motion, Entity target, Random rand) {
 		ItemStack item = hawk.item.get();
@@ -162,6 +187,9 @@ public class TomahawkImpls {
 	}
 	
 	
+	/**
+	 * @see EntityLivingBase#renderBrokenItemStack
+	 */
 	public static void renderBrokenItemStack(Entity entity, ItemStack item, Random rand) {
 		entity.playSound("random.break", 0.8F, 0.8F + entity.worldObj.rand.nextFloat() * 0.4F);
 		
@@ -182,6 +210,9 @@ public class TomahawkImpls {
 	}
 	
 	
+	/**
+	 * @see ContainerRepair#updateRepairOutput
+	 */
 	public static void fuseGoldenSword(AnvilUpdateEvent event, Map<Integer, Integer> additionalEnchs) {
 		event.output = event.left.copy();
 		int c = event.left.getRepairCost();
@@ -277,5 +308,32 @@ public class TomahawkImpls {
 			return 1;
 		}
 	}
-
+	
+	
+	/**
+	 * @see ItemInWorldManager#activateBlockOrUseItem
+	 */
+	public static boolean activateBlock(PlayerInteractEvent event, EntityPlayer player, ItemStack item, Vec3f hit) {
+		Block block = event.world.getBlock(event.x, event.y, event.z);
+		boolean isAir = block.isAir(event.world, event.x, event.y, event.z);
+		boolean useBlock = !player.isSneaking() || item == null
+				|| item.getItem().doesSneakBypassUse(event.world, event.x, event.y, event.z, player);
+		
+		if (useBlock) {
+			if (event.useBlock != Event.Result.DENY)
+				return block.onBlockActivated(
+						event.world, event.x, event.y, event.z,
+						player, event.face, hit.x(), hit.y(), hit.z()
+				);
+			else {
+				if (player instanceof EntityPlayerMP)
+					((EntityPlayerMP) player).playerNetServerHandler
+						.sendPacket(new S23PacketBlockChange(event.x, event.y, event.z, event.world));
+				return event.useItem != Event.Result.ALLOW;
+			}
+		}
+		
+		return false;
+	}
+	
 }
