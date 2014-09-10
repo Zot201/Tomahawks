@@ -13,7 +13,7 @@ import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
 
 import zotmc.tomahawk.data.AsmData;
-import zotmc.tomahawk.util.Messod;
+import zotmc.tomahawk.util.init.Messod;
 
 import com.google.common.base.Throwables;
 

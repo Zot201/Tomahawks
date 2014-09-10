@@ -1,4 +1,4 @@
-package zotmc.tomahawk.util;
+package zotmc.tomahawk.util.init;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -9,6 +9,8 @@ import java.util.Objects;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+
+import zotmc.tomahawk.util.MethodInfo;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;

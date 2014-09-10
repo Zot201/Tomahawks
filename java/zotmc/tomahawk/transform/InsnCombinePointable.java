@@ -7,7 +7,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
 import zotmc.tomahawk.data.AsmData.Pointables;
-import zotmc.tomahawk.util.Messod;
+import zotmc.tomahawk.util.init.Messod;
 
 abstract class InsnCombinePointable extends InsnCombine {
 	

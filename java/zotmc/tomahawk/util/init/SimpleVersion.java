@@ -1,5 +1,6 @@
-package zotmc.tomahawk.util;
+package zotmc.tomahawk.util.init;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
@@ -20,7 +21,7 @@ public final class SimpleVersion implements Comparable<SimpleVersion> {
 	private static FluentIterable<Integer> parse(String s) {
 		return FluentIterable
 				.from(Splitter.on('.').split(s))
-				.transform(Utils.integerParser());
+				.transform(IntegerParser.INSTANCE);
 	}
 	
 	private int compareTo(Iterable<Integer> parts) {
@@ -52,6 +53,13 @@ public final class SimpleVersion implements Comparable<SimpleVersion> {
 	
 	@Override public String toString() {
 		return Joiner.on('.').join(parts);
+	}
+	
+	private enum IntegerParser implements Function<String, Integer> {
+		INSTANCE;
+		@Override public Integer apply(String input) {
+			return Integer.parseInt(input);
+		}
 	}
 
 }

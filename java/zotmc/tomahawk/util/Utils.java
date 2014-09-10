@@ -46,6 +46,7 @@ import zotmc.tomahawk.data.ReflData.Bootstraps;
 import zotmc.tomahawk.data.ReflData.EnchantmentHelpers;
 import zotmc.tomahawk.util.geometry.CartesianVec3d;
 import zotmc.tomahawk.util.geometry.Vec3d;
+import zotmc.tomahawk.util.init.SimpleVersion;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -505,16 +506,6 @@ public class Utils {
 	private enum EmptyRunnable implements Runnable {
 		INSTANCE;
 		@Override public void run() { }
-	}
-	
-	public static Function<String, Integer> integerParser() {
-		return IntegerParser.INSTANCE;
-	}
-	private enum IntegerParser implements Function<String, Integer> {
-		INSTANCE;
-		@Override public Integer apply(String input) {
-			return Integer.parseInt(input);
-		}
 	}
 	
 	public static Function<Class<?>, Type> asmTypeAdaptor() {

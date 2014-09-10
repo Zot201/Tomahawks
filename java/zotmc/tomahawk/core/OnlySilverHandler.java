@@ -41,8 +41,7 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 		return Reflection.newProxy(
 				inUseWeapon,
 				new InvocationHandler() {
-					@Override public Object invoke(Object proxy, Method method, Object[] args)
-							throws Throwable {
+					@Override public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 						switch(method.getName()) {
 						case "getUser":
 							return getUser(hawk);

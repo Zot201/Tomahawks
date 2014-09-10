@@ -27,7 +27,7 @@ import cpw.mods.fml.common.eventhandler.EventBus;
 public class ReflData {
 	
 	public static class Bootstraps {
-		public static final Field MC_VERSION = Refls.findField(Loader.class, "MC_VERSION", "mccversion"); // -, 164
+		public static final Field MC_VERSION = Refls.findField(Loader.class, "MC_VERSION", "mccversion"); // -, 172
 	}
 	
 	public static class EntityArrows {

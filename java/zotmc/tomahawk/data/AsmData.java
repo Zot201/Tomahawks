@@ -6,9 +6,9 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
-import zotmc.tomahawk.util.Messod;
-import zotmc.tomahawk.util.SimpleVersion;
-import zotmc.tomahawk.util.Typo;
+import zotmc.tomahawk.util.init.Messod;
+import zotmc.tomahawk.util.init.SimpleVersion;
+import zotmc.tomahawk.util.init.Typo;
 
 import com.google.common.base.Supplier;
 

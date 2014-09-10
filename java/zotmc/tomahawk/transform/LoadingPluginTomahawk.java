@@ -3,7 +3,7 @@ package zotmc.tomahawk.transform;
 import java.util.Map;
 import java.util.Set;
 
-import zotmc.tomahawk.util.Typo;
+import zotmc.tomahawk.util.init.Typo;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
