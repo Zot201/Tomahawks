@@ -173,7 +173,7 @@ public class Config {
 	NBTTagCompound writeToNBT() {
 		NBTTagCompound tags = new NBTTagCompound();
 		for (Field f : configurableFields())
-			if (f.getAnnotation(ApplyHot.class) == null && f.getAnnotation(NoSync.class) == null)
+			if (f.getAnnotation(ApplyHot.class) != null && f.getAnnotation(NoSync.class) == null)
 				tags.setTag(f.getName(), Fields.<Configurable<?>>get(this, f).writeToNBT());
 		return tags;
 	}
