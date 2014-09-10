@@ -81,12 +81,12 @@ public class GuiConfigScreen extends GuiScreen {
 
 	
 	protected void updateNonHotChanges() {
-		nonHotChanges = !config.nonCoreNonHotEqualTo(Config.current());
+		nonHotChanges = !config.nonCoreNonHotEqualTo(Config.local());
 	}
 	
 	protected void saveQuit() {
 		Config.preserved().apply(config).save();
-		Config.current().applyHot(config);
+		Config.local().applyHot(config);
 		quit();
 	}
 	protected void quit() {

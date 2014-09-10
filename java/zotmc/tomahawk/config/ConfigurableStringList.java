@@ -1,8 +1,10 @@
 package zotmc.tomahawk.config;
 
-import java.util.Arrays;
-
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.common.config.Configuration;
+import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
@@ -46,9 +48,7 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 				.get(category, key, getStringList())
 				.getStringList();
 		
-		setIterable(FluentIterable
-				.from(Arrays.asList(a))
-				.transform(valueOfFunction()));
+		setIterable(Utils.asIterable(a).transform(valueOfFunction()));
 	}
 	
 	@Override void save(Configuration configFile) {
@@ -57,6 +57,27 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 			.set(getStringList());
 		
 		configFile.save();
+	}
+	
+	@Override NBTTagCompound writeToNBT() {
+		NBTTagCompound tags = new NBTTagCompound();
+		
+		NBTTagList list = new NBTTagList();
+		for (String s : getStringList())
+			list.appendTag(new NBTTagString(s));
+		tags.setTag("value", list);
+		
+		return tags;
+	}
+	
+	@Override void readFromNBT(NBTTagCompound tags) {
+		NBTTagList list = tags.getTagList("value", 8);
+		
+		String[] a = new String[list.tagCount()];
+		for (int i = 0; i < list.tagCount(); i++)
+			a[i] = list.getStringTagAt(i);
+		
+		setIterable(Utils.asIterable(a).transform(valueOfFunction()));
 	}
 
 }

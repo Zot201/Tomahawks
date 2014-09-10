@@ -70,10 +70,12 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLLoadCompleteEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
-import cpw.mods.fml.common.eventhandler.Event.Result;
+import cpw.mods.fml.common.eventhandler.Event;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -84,7 +86,9 @@ public class TomahawksCore {
 	
 	@Instance(CORE_MODID) public static TomahawksCore instance;
 	
-	public final Logger log = LogManager.getFormatterLogger(MODID);
+	public final Logger log = LogManager.getFormatterLogger(CORE_MODID);
+	
+	public final SimpleNetworkWrapper network = NetworkRegistry.INSTANCE.newSimpleChannel(CORE_MODID);
 	
 	
 	@EventHandler public void onConstruct(FMLConstructionEvent event) {
@@ -171,7 +175,7 @@ public class TomahawksCore {
 		Utils.invokeDeclared(TomahawkAPI.class, "onAvailable");
 	}
 	
-	@EventHandler public void onServerStart(FMLServerStartingEvent event) {
+	@EventHandler public void onServerStart(FMLServerAboutToStartEvent event) {
 		Utils.invokeDeclared(TomahawkAPI.class, "onServerStart");
 	}
 	
@@ -179,6 +183,9 @@ public class TomahawksCore {
 		Utils.invokeDeclared(TomahawkAPI.class, "onServerStop");
 	}
 	
+	
+	
+	// Forge Events
 	
 	final Vec3f hit = new CartesianVec3f();
 	
@@ -198,7 +205,7 @@ public class TomahawksCore {
 						TomahawkImpls.setHit();
 					
 					if (rightClickBlock && TomahawkImpls.activateBlock(event, player, item, hit)) {
-		        		event.useBlock = Result.DENY;
+		        		event.useBlock = Event.Result.DENY;
 		        		return;
 					}
 					
@@ -226,15 +233,15 @@ public class TomahawksCore {
 								player.setCurrentItemOrArmor(0, null);
 						}
 
-						event.useItem = Result.DENY;
-		        		event.useBlock = Result.DENY;
+						event.useItem = Event.Result.DENY;
+		        		event.useBlock = Event.Result.DENY;
 		        		tracker.onInteract();
 					}
 				}
 			}
 		}
 	}
-
+	
 	@SubscribeEvent public void onLivingHurt(LivingHurtEvent event) {
 		if (!event.entityLiving.worldObj.isRemote) {
 			Entity sod = event.source.getSourceOfDamage();

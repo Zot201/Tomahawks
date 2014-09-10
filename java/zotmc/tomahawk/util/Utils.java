@@ -56,6 +56,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
@@ -465,7 +466,7 @@ public class Utils {
 		}
 		@Override public E get(int index) {
 			if (index < 0 || index >= size)
-				throw new UnsupportedOperationException();
+				throw new IndexOutOfBoundsException();
 			return elementFunction.apply(index);
 		}
 		@Override public int size() {
@@ -544,6 +545,10 @@ public class Utils {
 	@SuppressWarnings("unchecked")
 	public static <T> Optional<T> tryCast(Class<T> clz, Object obj) {
 		return clz.isInstance(obj) ? Optional.of((T) obj) : Optional.<T>absent();
+	}
+	
+	public static <T> FluentIterable<T> asIterable(T[] a) {
+		return FluentIterable.from(Arrays.asList(a));
 	}
 	
 	

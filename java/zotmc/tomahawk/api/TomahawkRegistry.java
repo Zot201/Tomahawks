@@ -102,14 +102,14 @@ public class TomahawkRegistry {
 					Launchable launchable = c.getAnnotation(Launchable.class);
 					if (launchable != null && !delegations.containsKey(Category.class))
 						delegations.put(Category.class, new Delegation(launchable, LAUNCHABLE_VALUE));
-
-					for (Entry<Method, Annotation> entry : Utils.getMethodAnnotations(c)) {
+					
+					/*for (Entry<Method, Annotation> entry : Utils.getMethodAnnotations(c)) {
 						Class<? extends Annotation> t = entry.getValue().annotationType();
 						if (ItemHandler.ANNOTATION_MAP.containsKey(t) && t != Category.class && !delegations.containsKey(t)) {
 							Method m = checkMethod(entry.getKey(), t.getAnnotation(Usage.class).desc());
 							delegations.put(t, new Delegation(item, m));
 						}
-					}
+					}*/
 				}
 				
 				if (baseHandler == WeaponCategory.DISABLED) {

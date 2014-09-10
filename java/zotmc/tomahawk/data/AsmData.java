@@ -7,14 +7,15 @@ import org.objectweb.asm.tree.MethodInsnNode;
 
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
 import zotmc.tomahawk.util.Messod;
+import zotmc.tomahawk.util.SimpleVersion;
 import zotmc.tomahawk.util.Typo;
 
 import com.google.common.base.Supplier;
 
 public class AsmData {
 	
-	public static final String
-	MODID = AxeTomahawk.MODID;
+	public static final String CORE_MODID = AxeTomahawk.CORE_MODID;
+	private static final SimpleVersion MC_STRING = new SimpleVersion(AxeTomahawk.MC_STRING);
 	
 	public static class Pointables {
 		public static final String
@@ -37,6 +38,11 @@ public class AsmData {
 	}
 	
 	public static class SetHits {
+		private static final String
+		ITEM_IN_WORLD_MANAGER = "net/minecraft/"
+				+ (MC_STRING.isAtLeast("1.7.2") ? "server/management/" : "item/")
+				+ "ItemInWorldManager";
+		
 		public static final Supplier<AbstractInsnNode>
 		INVOKE_SET_HIT = new Supplier<AbstractInsnNode>() { public AbstractInsnNode get() {
 			return new MethodInsnNode(Opcodes.INVOKESTATIC, "zotmc/tomahawk/core/TomahawkImpls", "setHit", "(FFF)V");
@@ -44,7 +50,7 @@ public class AsmData {
 		
 		public static final Messod
 		ON_PLAYER_INTERACT = Typo.of("net/minecraftforge/event/ForgeEventFactory").mess("onPlayerInteract"),
-		ACTIVATE_BLOCK_OR_USE_ITEM = Typo.of("net/minecraft/server/management/ItemInWorldManager")
+		ACTIVATE_BLOCK_OR_USE_ITEM = Typo.of(ITEM_IN_WORLD_MANAGER)
 			.mess("activateBlockOrUseItem", "func_73078_a")
 			.desc(Type.BOOLEAN_TYPE, "net/minecraft/entity/player/EntityPlayer", "net/minecraft/world/World",
 					"net/minecraft/item/ItemStack", Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE, Type.INT_TYPE,

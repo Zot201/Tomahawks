@@ -20,6 +20,7 @@ public class I18nData {
 		COMMON_AXES_THROWING = Utils.localize("tomahawk.gui.config.commonAxesThrowing"),
 		THROWABLE_ITEMS = Utils.localize("tomahawk.gui.config.throwableItems"),
 		FREE_RETRIEVAL = Utils.localize("tomahawk.gui.config.freeRetrieval"),
+		ENTITY_RESTITUTION = Utils.localize("tomahawk.gui.config.entityRestitution"),
 		
 		ENCHANTMENTS = Utils.localize("tomahawk.gui.config.enchantments"),
 		GOLDEN_FUSION = Utils.localize("tomahawk.gui.config.goldenFusion"),
@@ -37,6 +38,9 @@ public class I18nData {
 		ON = Utils.localize("tomahawk.gui.on"),
 		OFF = Utils.localize("tomahawk.gui.off"),
 		DISABLED = Utils.localize("tomahawk.gui.disabled"),
+		
+		CLASSICAL = Utils.localize("tomahawk.gui.config.classical"),
+		REDUCED = Utils.localize("tomahawk.gui.config.reduced"),
 		
 		DONE = Utils.localize("gui.done"),
 		DONE_REMARKED = Utils.localize("tomahawk.gui.config.doneRemarked", DONE),

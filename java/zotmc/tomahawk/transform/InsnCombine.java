@@ -19,7 +19,7 @@ import com.google.common.base.Throwables;
 
 abstract class InsnCombine implements IClassTransformer {
 	
-	private final Logger log = LogManager.getFormatterLogger(AsmData.MODID);
+	private final Logger log = LogManager.getFormatterLogger(AsmData.CORE_MODID);
 	private final Messod target;
 	
 	public InsnCombine(Messod target) {
@@ -41,7 +41,7 @@ abstract class InsnCombine implements IClassTransformer {
 	protected abstract void combine(InsnList list, AbstractInsnNode insnNode);
 	
 	protected byte[] patch(byte[] basicClass) throws Throwable {
-		log.info("Patching %s", target);
+		log.info("Patching %s...", target);
 		
 		ClassNode classNode = new ClassNode();
 		new ClassReader(basicClass).accept(classNode, 0);

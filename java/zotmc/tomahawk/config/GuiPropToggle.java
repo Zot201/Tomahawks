@@ -10,7 +10,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @SideOnly(CLIENT)
 public class GuiPropToggle extends GuiPropPress {
 	
-	private final Configurable<Boolean> value;
+	protected final Configurable<Boolean> value;
 	
 	public GuiPropToggle(Supplier<String> name, Configurable<Boolean> value) {
 		super(name);

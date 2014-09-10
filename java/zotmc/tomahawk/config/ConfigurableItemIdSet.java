@@ -5,6 +5,7 @@ import static com.google.common.base.Predicates.isNull;
 import java.util.Set;
 
 import net.minecraft.item.Item;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.config.Configuration;
 import zotmc.tomahawk.util.TransformedSet;
 
@@ -102,6 +103,12 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 			throw new UnsupportedOperationException();
 		}
 		@Override void save(Configuration configFile) {
+			throw new UnsupportedOperationException();
+		}
+		@Override NBTTagCompound writeToNBT() {
+			throw new UnsupportedOperationException();
+		}
+		@Override void readFromNBT(NBTTagCompound tags) {
 			throw new UnsupportedOperationException();
 		}
 	}

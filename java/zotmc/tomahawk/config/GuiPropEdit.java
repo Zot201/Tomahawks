@@ -18,7 +18,7 @@ public class GuiPropEdit extends GuiPropPress {
 	}
 	
 	@Override protected void onPress() {
-		factory.get().open(Config.current(), propName);
+		factory.get().open(Config.local(), propName);
 		
 		super.onPress();
 	}

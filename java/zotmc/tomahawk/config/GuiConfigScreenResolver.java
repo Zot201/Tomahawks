@@ -30,7 +30,7 @@ public class GuiConfigScreenResolver extends GuiScreen {
 	
 	public GuiConfigScreenResolver(GuiScreen parent) {
 		this.parent = parent;
-		config = Config.current();
+		config = Config.local();
 	}
 	
 	@Override public void initGui() {

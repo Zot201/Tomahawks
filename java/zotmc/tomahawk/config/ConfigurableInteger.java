@@ -1,5 +1,6 @@
 package zotmc.tomahawk.config;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.config.Configuration;
 
 public class ConfigurableInteger extends Configurable<Integer> {
@@ -27,6 +28,16 @@ public class ConfigurableInteger extends Configurable<Integer> {
 		configFile.get(category, key, 0).set(value);
 		
 		configFile.save();
+	}
+	
+	@Override NBTTagCompound writeToNBT() {
+		NBTTagCompound tags = new NBTTagCompound();
+		tags.setInteger("value", value);
+		return tags;
+	}
+	
+	@Override void readFromNBT(NBTTagCompound tags) {
+		value = tags.getInteger("value");
 	}
 	
 }

@@ -51,8 +51,7 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 							return getItem(hawk);
 							
 						case "update":
-							update(hawk, (ItemStack) args[0]);
-							return null;
+							return update(hawk, (ItemStack) args[0]);
 							
 						case "toString":
 							return OnlySilverHandler.this.toString(hawk);
@@ -73,7 +72,7 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 		return Optional.fromNullable(hawk.item.get());
 	}
 	
-	private void update(EntityTomahawk hawk, ItemStack item) {
+	private Void update(EntityTomahawk hawk, ItemStack item) {
 		if (item == null) {
 			hawk.setDead();
 			hawk.playSound("random.break", 0.8F, 0.8F + hawk.worldObj.rand.nextFloat() * 0.4F);
@@ -81,6 +80,8 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 		
 		if (item != hawk.item.get())
 			hawk.item.set(item);
+		
+		return null;
 	}
 	
 	private String toString(EntityTomahawk hawk) {

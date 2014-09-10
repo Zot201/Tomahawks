@@ -44,6 +44,11 @@ public class GuiConfigScreenCore extends GuiConfigScreen {
 						}}
 				),
 				new GuiPropToggle(ConfigI18ns.FREE_RETRIEVAL, config.freeRetrieval),
+				new GuiPropToggle(ConfigI18ns.ENTITY_RESTITUTION, config.reduceEntityRestitution) {
+					@Override protected String getButtonDisplay() {
+						return (value.get() ? ConfigI18ns.REDUCED : ConfigI18ns.CLASSICAL).get();
+					}
+				},
 				
 				new GuiPropCat(ConfigI18ns.ENCHANTMENTS),
 				new GuiPropToggle(ConfigI18ns.IGNITE_FIRE_RESPECT, config.igniteFireRespect),
@@ -74,7 +79,7 @@ public class GuiConfigScreenCore extends GuiConfigScreen {
 	
 	
 	@Override protected void updateNonHotChanges() {
-		nonHotChanges = !config.coreNonHotEqualTo(Config.current());
+		nonHotChanges = !config.coreNonHotEqualTo(Config.local());
 	}
 	
 	@Override protected void resetAll() {

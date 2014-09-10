@@ -45,8 +45,8 @@ public abstract class GuiPropPress implements IGuiListEntry {
 	@Override public void drawEntry(int index, int x, int y, int listWidth, int slotHeight,
 			Tessellator tessellator, int mouseX, int mouseY, boolean isSelected) {
 		
-		button.setLeftTop(listWidth * 2 / 3, y)
-			.setWidth(listWidth / 3 - (45 + 18))
+		button.setLeftTop(listWidth * 3 / 5, y)
+			.setWidth(listWidth * 2 / 5 - (45 + 18))
 			.drawButton(mc(), mouseX, mouseY);
 		
 		mc().fontRenderer.drawString(

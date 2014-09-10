@@ -2,6 +2,7 @@ package zotmc.tomahawk.config;
 
 import java.util.Objects;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.config.Configuration;
 
 import com.google.common.base.Supplier;
@@ -20,6 +21,10 @@ public abstract class Configurable<T> implements Supplier<T> {
 	abstract void load(Configuration configFile);
 	
 	abstract void save(Configuration configFile);
+	
+	abstract NBTTagCompound writeToNBT();
+	
+	abstract void readFromNBT(NBTTagCompound tags);
 	
 	
 	@Override public int hashCode() {

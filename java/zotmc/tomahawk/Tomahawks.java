@@ -13,6 +13,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.ConfigState;
 import zotmc.tomahawk.api.Launchable.DispenseFactory;
@@ -25,7 +29,6 @@ import zotmc.tomahawk.api.WeaponCategory;
 import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
-import zotmc.tomahawk.core.TomahawksCore;
 import zotmc.tomahawk.data.ModData;
 import zotmc.tomahawk.data.ModData.TConstruct;
 import zotmc.tomahawk.projectile.EntityTomahawk;
@@ -38,6 +41,8 @@ import cpw.mods.fml.common.registry.EntityRegistry;
 
 @Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES, guiFactory = GUI_FACTORY)
 public class Tomahawks {
+	
+	private final Logger log = LogManager.getFormatterLogger(MODID);
 	
 	@EventHandler public void preInit(FMLPreInitializationEvent event) {
 		ModData.init(event.getModMetadata());
@@ -123,7 +128,7 @@ public class Tomahawks {
 				});
 				
 			} catch (Throwable e) {
-				TomahawksCore.instance.log.catching(e);
+				log.catching(e);
 			}
 	}
 	
