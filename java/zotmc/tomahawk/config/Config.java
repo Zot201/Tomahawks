@@ -179,17 +179,16 @@ public class Config {
 	}
 	
 	@SuppressWarnings("unchecked")
-	static Config readFromNBT(NBTTagCompound tags) {
-		Config ret = new Config();
+	Config readFromNBT(NBTTagCompound tags) {
 		for (String key : (Set<String>) tags.func_150296_c())
 			try {
-				Configurable<?> c = (Configurable<?>) Config.class.getField(key).get(ret);
+				Configurable<?> c = (Configurable<?>) Config.class.getField(key).get(this);
 				c.readFromNBT(tags.getCompoundTag(key));
 			} catch (Throwable e) {
 				TomahawksCore.instance.log.catching(e);
 			}
 		
-		return ret;
+		return this;
 	}
 	
 	

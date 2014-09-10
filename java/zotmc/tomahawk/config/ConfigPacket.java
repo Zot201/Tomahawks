@@ -20,7 +20,7 @@ public class ConfigPacket implements IMessage {
 	
 	@Override public void fromBytes(ByteBuf buf) {
 		try {
-			value = Config.readFromNBT(new PacketBuffer(buf).readNBTTagCompoundFromBuffer());
+			value = Config.local().copy().readFromNBT(new PacketBuffer(buf).readNBTTagCompoundFromBuffer());
 		} catch (IOException e) {
 			TomahawksCore.instance.log.catching(e);
 		}
