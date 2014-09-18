@@ -8,7 +8,7 @@ import com.google.common.collect.Lists;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModMetadata;
 
-@Requirements({"1.7.2 = [1.7.2, 1.7.10]", "1.6.2 = [1.6.2, 1.6.4]"})
+@Requirements({"1.7 = 1.7", "1.6 = [1.6, 1.7)"})
 public class ModData {
 	
 	public static class AxeTomahawk {
@@ -16,7 +16,7 @@ public class ModData {
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
 		MC_STRING = Loader.MC_VERSION,
-		VERSION = "1.4.5.2-" + MC_STRING,
+		VERSION = "1.4.8.0-" + MC_STRING,
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
 		

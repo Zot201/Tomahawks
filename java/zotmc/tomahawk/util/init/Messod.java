@@ -10,16 +10,13 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import zotmc.tomahawk.util.MethodInfo;
-
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 
 import cpw.mods.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 
-public final class Messod implements Predicate<MethodInfo> {
+public final class Messod {
 	
 	private final Typo owner;
 	private final List<String> names;
@@ -70,13 +67,6 @@ public final class Messod implements Predicate<MethodInfo> {
 					return true;
 		
 		return false;
-	}
-	
-	@Deprecated @Override public boolean apply(MethodInfo input) {
-		return covers(input);
-	}
-	public boolean covers(MethodInfo input) {
-		return covers(input.getName(), input.getDescriptor());
 	}
 	
 	public boolean covers(MethodNode node) {

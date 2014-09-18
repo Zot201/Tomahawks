@@ -2,6 +2,7 @@ package zotmc.tomahawk.core;
 
 import static cpw.mods.fml.common.eventhandler.EventPriority.LOW;
 import static cpw.mods.fml.relauncher.Side.CLIENT;
+import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.INHERIT_GOLDEN_SWORD;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_DEPENDENCIES;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_GUI_FACTORY;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_MODID;
@@ -56,6 +57,7 @@ import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.CartesianVec3f;
+import zotmc.tomahawk.util.geometry.EntityGeometry;
 import zotmc.tomahawk.util.geometry.HybridVec3d;
 import zotmc.tomahawk.util.geometry.Vec3f;
 import zotmc.tomahawk.util.prop.Props;
@@ -265,7 +267,7 @@ public class TomahawksCore {
 		//left and right are not null
 		if (Config.current().goldenFusion.get()
 				&& event.right.getItem() == Items.golden_sword
-				&& TomahawkRegistry.getItemHandler(event.left).inheritGoldenSword(event.left)) {
+				&& TomahawkRegistry.getItemHandler(event.left).isEnchantable(event.left, INHERIT_GOLDEN_SWORD)) {
 			Map<Integer, Integer> enchs = Utils.getEnchs(event.right);
 			
 			if (!enchs.isEmpty())

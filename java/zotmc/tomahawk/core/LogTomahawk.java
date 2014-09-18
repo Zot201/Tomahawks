@@ -41,7 +41,7 @@ public class LogTomahawk {
 	}
 	
 	private static Logger createLogger(final LogCategory cat) {
-		final Logger delegatee = LogManager.getFormatterLogger(AxeTomahawk.MODID + "." + cat);
+		final Logger delegatee = LogManager.getFormatterLogger(AxeTomahawk.CORE_MODID + "." + cat);
 		
 		return Reflection.newProxy(Logger.class, new InvocationHandler() {
 			@Override public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

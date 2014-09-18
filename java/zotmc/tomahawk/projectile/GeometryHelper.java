@@ -7,16 +7,26 @@ import static zotmc.tomahawk.util.geometry.SideHit.NORTH;
 import static zotmc.tomahawk.util.geometry.SideHit.SOUTH;
 import static zotmc.tomahawk.util.geometry.SideHit.UP;
 import static zotmc.tomahawk.util.geometry.SideHit.WEST;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
+import zotmc.tomahawk.core.PlayerTracker;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.CartesianVec3d;
 import zotmc.tomahawk.util.geometry.SideHit;
 import zotmc.tomahawk.util.geometry.Vec3d;
 
-public class PositionHelper {
-
+public class GeometryHelper {
+	
+	public static Vec3d motion(Entity entity) {
+		Vec3d ret = entity instanceof EntityPlayer ? PlayerTracker.get((EntityPlayer) entity).getLastMotion()
+			: new CartesianVec3d(entity.motionX, entity.motionY, entity.motionZ);
+		
+		return ret.isNaN() ? Vec3d.zero() : ret;
+	}
+	
 	public static MovingObjectPosition calculateInterceptAdjusted(AxisAlignedBB aabb, Vec3 a, Vec3 b) {
 		MovingObjectPosition ret = calculateIntercept(aabb, a, b);
 		

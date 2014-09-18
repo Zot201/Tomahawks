@@ -20,6 +20,39 @@ public abstract class Vec3d implements Formattable {
 	
 	Vec3d() { }
 	
+	public static Vec3d zero() {
+		return ZERO;
+	}
+	
+	
+	// internal
+	
+	protected Vec3d copy() {
+		return new CartesianVec3d(x(), y(), z());
+	}
+	
+	private static final Vec3d ZERO = new Vec3d() {
+		@Override public double x() {
+			return 0;
+		}
+		@Override public double y() {
+			return 0;
+		}
+		@Override public double z() {
+			return 0;
+		}
+		
+		@Override public void setX(double x) {
+			throw new UnsupportedOperationException();
+		}
+		@Override public void setY(double y) {
+			throw new UnsupportedOperationException();
+		}
+		@Override public void setZ(double z) {
+			throw new UnsupportedOperationException();
+		}
+	};
+	
 	
 	// getters
 	
@@ -143,6 +176,12 @@ public abstract class Vec3d implements Formattable {
 		return cross(vec.x(), vec.y(), vec.z(), f);
 	}
 	
+	public Vec3d relativize(Vec3d vec) {
+		Vec3d ret = copy();
+		ret.subtract(vec);
+		return ret;
+	}
+	
 	
 	// minecraft
 	
@@ -180,6 +219,22 @@ public abstract class Vec3d implements Formattable {
 	
 	
 	// others
+	
+	public boolean isNaN() {
+		double x = x();
+		if (x != x)
+			return true;
+		
+		double y = y();
+		if (y != y)
+			return true;
+		
+		double z = z();
+		if (z != z)
+			return true;
+		
+		return false;
+	}
 	
 	public void addTo(Vec3d vec) {
 		vec.add(this);

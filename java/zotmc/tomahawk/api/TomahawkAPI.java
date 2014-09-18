@@ -31,10 +31,6 @@ public class TomahawkAPI {
 		return false;
 	}
 	
-	public static boolean isItemBlacklisted(ItemStack item) {
-		return item != null && isItemBlacklisted(item.getItem());
-	}
-	
 	public static boolean isItemBlacklisted(Item item) {
 		return (itemBlacklist != null ? itemBlacklist : Config.current().itemBlacklist.asItems().get())
 				.contains(item);

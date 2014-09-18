@@ -17,13 +17,15 @@ import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import zotmc.tomahawk.api.ItemHandler.EnchantmentAction;
+import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.ConfigState;
 import zotmc.tomahawk.api.Launchable.DispenseFactory;
-import zotmc.tomahawk.api.Launchable.HitSound;
+import zotmc.tomahawk.api.Launchable.Enchanting;
 import zotmc.tomahawk.api.Launchable.InitialSpeed;
 import zotmc.tomahawk.api.Launchable.LaunchFactory;
-import zotmc.tomahawk.api.Launchable.Replica;
+import zotmc.tomahawk.api.Launchable.Sound;
 import zotmc.tomahawk.api.TomahawkRegistry;
 import zotmc.tomahawk.api.WeaponCategory;
 import zotmc.tomahawk.api.WeaponDispenseEvent;
@@ -67,7 +69,7 @@ public class Tomahawks {
 					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCHatchetsThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
+					@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
 						return false;
 					}
 				});
@@ -80,7 +82,7 @@ public class Tomahawks {
 					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCLumerAxesThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
+					@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
 						return false;
 					}
 					@InitialSpeed public float getInitialSpeed(ItemStack item) {
@@ -101,7 +103,7 @@ public class Tomahawks {
 					@ConfigState protected boolean isEnabled() {
 						return Config.current().tiCHammersThrowing.get();
 					}
-					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
+					@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
 						return false;
 					}
 				});*/
@@ -119,10 +121,11 @@ public class Tomahawks {
 					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCFryingPansThrowing.get();
 					}
-					@HitSound public SoundType getHitSound(ItemStack item) {
-						return hitSound;
+					@Sound public SoundType getSound(ItemStack item, PlaybackType type) {
+						return type == PlaybackType.HIT_BLOCK || type == PlaybackType.HIT_ENTITY ?
+								hitSound : category().getSound(item, type);
 					}
-					@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable) {
+					@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
 						return false;
 					}
 				});

@@ -1,14 +1,13 @@
 package zotmc.tomahawk.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.util.Random;
-
+import net.minecraft.block.Block.SoundType;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent;
+import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import cpw.mods.fml.common.eventhandler.Cancelable;
 
 @Cancelable
@@ -21,7 +20,7 @@ public class WeaponLaunchEvent extends LivingEvent {
 	public boolean isForwardSpin = true, isFragile;
 	
 	public float exhaustion = 0.3F;
-	public boolean stopSprinting = true, swingItem = true, playSound = true;
+	public boolean stopSprinting = true, swingItem = true;
 	
 	public WeaponLaunchEvent(EntityLivingBase entity, ItemStack item, ItemHandler handler) {
 		super(entity);
@@ -38,13 +37,14 @@ public class WeaponLaunchEvent extends LivingEvent {
 				entityLiving.swingItem();
 			if (entityLiving instanceof EntityPlayer)
 				((EntityPlayer) entityLiving).addExhaustion(exhaustion);
-			if (playSound)
-				entity.worldObj.playSoundAtEntity(
-						entityLiving, "random.bow", 1, 1 / (new Random().nextFloat() * 0.4F + 1.2F) + 0.5F
-				);
 			
-			if (!entity.worldObj.isRemote)
+			if (!entity.worldObj.isRemote) {
 				entity.worldObj.spawnEntityInWorld(handler.createProjectile(this));
+				
+				SoundType s = handler.getSound(item, PlaybackType.LAUNCH);
+				if (s != null)
+					entity.worldObj.playSoundAtEntity(entityLiving, s.soundName, s.getVolume(), s.getPitch());
+			}
 			
 			return true;
 		}

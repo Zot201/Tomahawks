@@ -8,12 +8,14 @@ import java.lang.annotation.Target;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
+import zotmc.tomahawk.api.ItemHandler.EnchantmentAction;
+import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Launchable {
 	
-	public WeaponCategory value();
+	public String value();
 	
 	
 	@Retention(RetentionPolicy.RUNTIME)
@@ -48,18 +50,13 @@ public @interface Launchable {
 	
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.METHOD)
-	@Usage(ref = "getHitSound", desc = {SoundType.class, ItemStack.class})
-	public @interface HitSound { }
+	@Usage(ref = "getSound", desc = {SoundType.class, ItemStack.class, PlaybackType.class})
+	public @interface Sound { }
 	
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.METHOD)
-	@Usage(ref = "isReplicable", desc = {boolean.class, ItemStack.class, boolean.class})
-	public @interface Replica { }
-
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.METHOD)
-	@Usage(ref = "inheritGoldenSword", desc = {boolean.class, ItemStack.class})
-	public @interface GoldenFusion { }
+	@Usage(ref = "isEnchantable", desc = {boolean.class, ItemStack.class, EnchantmentAction.class})
+	public @interface Enchanting { }
 	
 	
 	@Retention(RetentionPolicy.RUNTIME)

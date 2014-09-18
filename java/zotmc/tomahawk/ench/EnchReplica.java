@@ -1,5 +1,7 @@
 package zotmc.tomahawk.ench;
 
+import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.REPLICA;
+import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.REPLICA_AT_BOOK;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnumEnchantmentType;
 import net.minecraft.item.ItemStack;
@@ -24,11 +26,11 @@ public class EnchReplica extends Enchantment {
 	}
 	
 	@Override public boolean canApply(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isReplicable(item, false);
+		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA);
 	}
 	
 	@Override public boolean canApplyAtEnchantingTable(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isReplicable(item, true);
+		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA_AT_BOOK);
 	}
 
 }

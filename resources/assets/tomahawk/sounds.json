@@ -1,0 +1,17 @@
+{
+  "random.tomahawk": {
+    "category": "master",
+    "sounds": [
+      "random/tomahawk"
+    ]
+  },
+  "random.tomahawk_hit": {
+    "category": "master",
+    "sounds": [
+      "random/tomahawk_hit1",
+      "random/tomahawk_hit2",
+      "random/tomahawk_hit3",
+      "random/tomahawk_hit4"
+    ]
+  }
+}

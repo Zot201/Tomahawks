@@ -16,11 +16,10 @@ import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.Condition;
 import zotmc.tomahawk.api.Launchable.ConfigState;
 import zotmc.tomahawk.api.Launchable.DispenseFactory;
-import zotmc.tomahawk.api.Launchable.GoldenFusion;
-import zotmc.tomahawk.api.Launchable.HitSound;
+import zotmc.tomahawk.api.Launchable.Enchanting;
 import zotmc.tomahawk.api.Launchable.InitialSpeed;
 import zotmc.tomahawk.api.Launchable.LaunchFactory;
-import zotmc.tomahawk.api.Launchable.Replica;
+import zotmc.tomahawk.api.Launchable.Sound;
 import zotmc.tomahawk.api.Launchable.Usage;
 import zotmc.tomahawk.util.Utils;
 
@@ -51,12 +50,24 @@ public interface ItemHandler {
 	
 	@InitialSpeed public float getInitialSpeed(ItemStack item);
 	
-	@HitSound public SoundType getHitSound(ItemStack item);
+	@Sound public SoundType getSound(ItemStack item, PlaybackType type);
 	
-	@Replica public boolean isReplicable(ItemStack item, boolean atEnchantmentTable);
+	@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action);
 	
-	@GoldenFusion public boolean inheritGoldenSword(ItemStack item);
 	
+	public enum PlaybackType {
+		LAUNCH,
+		IN_AIR,
+		HIT_BLOCK,
+		HIT_BLOCK_WEAK,
+		HIT_ENTITY;
+	}
+	
+	public enum EnchantmentAction {
+		REPLICA,
+		REPLICA_AT_BOOK,
+		INHERIT_GOLDEN_SWORD;
+	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" }) // manually checked
 	static final Map<Class<? extends Annotation>, Method> ANNOTATION_MAP = Maps.toMap(

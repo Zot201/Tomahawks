@@ -21,6 +21,10 @@ public abstract class AbsCylindricalVec3d extends Vec3d {
 	
 	// internal
 	
+	@Override protected Vec3d copy() {
+		return new CylindricalVec3d(y(), rho(), phi());
+	}
+	
 	private static final float[] SIN_TABLE = Fields.get(null, ReflData.SIN_TABLE);
 	
 	private static int upper16(int a) {
@@ -149,6 +153,21 @@ public abstract class AbsCylindricalVec3d extends Vec3d {
 				throw new UnsupportedOperationException();
 			}
 		};
+	}
+	
+	
+	// others
+	
+	@Override public boolean isNaN() {
+		double y = y();
+		if (y != y)
+			return true;
+		
+		double rho = rho();
+		if (rho != rho)
+			return true;
+		
+		return false;
 	}
 	
 }

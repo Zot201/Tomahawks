@@ -28,6 +28,7 @@ import zotmc.tomahawk.core.TomahawkImpls;
 import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.Angle;
+import zotmc.tomahawk.util.geometry.CartesianVec3d;
 import zotmc.tomahawk.util.geometry.MopBlockVec3i;
 import zotmc.tomahawk.util.geometry.NormalizedAngle;
 import zotmc.tomahawk.util.geometry.SideHit;
@@ -151,7 +152,7 @@ public class TickerTomahawk implements Runnable {
 			
 			float p = 7 / spinStrength;
 			float t = hawk.ticksInAir.get() % p;
-			if (t >= p - 1)
+			if (t >= p - 1 && !hawk.worldObj.isRemote)
 				hawk.playInAirSound(motion.norm2());
 			
 			
@@ -289,7 +290,7 @@ public class TickerTomahawk implements Runnable {
 					
 					AxisAlignedBB aabb = candidate.boundingBox.expand(0.4, 0.5, 0.4);
 					MovingObjectPosition intersect =
-							PositionHelper.calculateInterceptAdjusted(aabb, pos0, pos1);
+							GeometryHelper.calculateInterceptAdjusted(aabb, pos0, pos1);
 					
 					if (intersect != null) {
 						double d = intersect.hitVec.distanceTo(pos0);
@@ -354,27 +355,41 @@ public class TickerTomahawk implements Runnable {
 		
 		hawk.setPosition(pos.x(), pos.y(), pos.z());
 		hawk.func_145775_I();
-		
 	}
 	
 	protected void tickEntityImpact(final MovingObjectPosition mop) {
 		if (hawk.afterHit.get() < 0 && mop.entityHit != null) {
 			
+			Vec3d h = GeometryHelper.motion(mop.entityHit);
+			
 			auxiliary(new Runnable() { public void run() {
 				TomahawkImpls.onEntityImpactImpl(hawk, motion, mop.entityHit, hawk.rand());
 			}});
 			
-			tickRebounce(mop, hawk.getEntityRestitutionFactor());
+			tickRebounce(mop, hawk.getEntityRestitutionFactor(), h);
 			
 			Props.increment(hawk.afterHit);
 			
 			if (hawk.isFragile.get())
 				hawk.startBreaking();
 			else if (!hawk.worldObj.isRemote)
-				hawk.playHitSound();
+				hawk.playEntityHitSound();
 		}
 		
-		tickNoImpact();
+		MovingObjectPosition blockMop = hawk.worldObj.func_147447_a(
+				pos.toVec3(),
+				Utils.sumVec3(pos, motion),
+				false, true, false
+		);
+		
+		if (blockMop == null)
+			tickNoImpact();
+		else {
+			pos.setValues(blockMop.hitVec);
+			Vec3d v = new CartesianVec3d(motion);
+			v.multiplyValues(0.1 / motion.norm());
+			pos.subtract(v);
+		}
 	}
 	
 	protected void tickBlockImpact(MovingObjectPosition mop) {
@@ -429,7 +444,7 @@ public class TickerTomahawk implements Runnable {
 			
 			onItemUse(mop);
 			
-			tickRebounce(mop, hawk.getBlockRestitutionFactor());
+			tickRebounce(mop, hawk.getBlockRestitutionFactor(), Vec3d.zero());
 			
 			if (motion.norm2() < 1/9D) {
 				hawk.state.set(NO_REBOUNCE);
@@ -459,12 +474,12 @@ public class TickerTomahawk implements Runnable {
 			}});
 	}
 	
-	protected void tickRebounce(MovingObjectPosition mop, double f) {
+	protected void tickRebounce(MovingObjectPosition mop, double f, Vec3d h) {
 		Angle change = NormalizedAngle.createFromYawNegative(motion);
 		
 		{
 			Vec3d normal = (Vec3d) mop.hitInfo;
-
+			
 			/*if (!hawk.worldObj.isRemote) {
 				phy4j().debug("====Tick Rebounce====");
 				phy4j().debug("Pos:          %.1s", pos);
@@ -473,7 +488,8 @@ public class TickerTomahawk implements Runnable {
 			}*/
 			
 			{
-				Vec3d friction = normal.cross(hawk.spin, f * hawk.getSpinFrictionFactor() * motion.dot(normal));
+				double f1 = f * hawk.getSpinFrictionFactor() * motion.relativize(h).dot(normal);
+				Vec3d friction = normal.cross(hawk.spin, f1);
 				
 				/*if (!hawk.worldObj.isRemote) {
 					phy4j().debug("====Tick Rebounce====");
@@ -487,8 +503,10 @@ public class TickerTomahawk implements Runnable {
 				
 				motion.add(friction);
 				
-				if (mop.entityHit != null)
+				if (h != Vec3d.zero()) {
 					friction.subtractMotionFrom(mop.entityHit, 0.02);
+					h.subtract(friction, 0.02);
+				}
 			}
 			
 			/*if (mop.typeOfHit == BLOCK)
@@ -496,11 +514,12 @@ public class TickerTomahawk implements Runnable {
 						"Side Hit    : %s", SideHit.of(mop.sideHit).name()
 				);*/
 			
-			double r = 2 * motion.dot(normal);
+			Vec3d s = motion.relativize(h);
+			double r = 2 * s.dot(normal);
 			motion.setValues(
-					f * (motion.x() - r * normal.x()),
-					f * (motion.y() - r * normal.y()),
-					f * (motion.z() - r * normal.z())
+					f * (s.x() - r * normal.x()) + h.x(),
+					f * (s.y() - r * normal.y()) + h.y(),
+					f * (s.z() - r * normal.z()) + h.z()
 			);
 			
 			/*if (!hawk.worldObj.isRemote) {

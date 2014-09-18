@@ -8,8 +8,18 @@ public class HybridVec3d extends CylindricalVec3d {
 	
 	public HybridVec3d() { }
 	
+	private HybridVec3d(double y, double rho, int phi, Double x, Double z) {
+		super(y, rho, phi);
+		this.x = x;
+		this.z = z;
+	}
+	
 	
 	// internal
+	
+	@Override protected Vec3d copy() {
+		return new HybridVec3d(y(), rho(), phi(), x, z);
+	}
 	
 	@Override void addRho(double rho, AbsCylindricalVec3d vec, double f) {
 		super.addRho(rho, vec, f);
@@ -91,6 +101,24 @@ public class HybridVec3d extends CylindricalVec3d {
 			x = tags.getDouble("x");
 		if (tags.hasKey("z"))
 			z = tags.getDouble("z");
+	}
+	
+	
+	// other
+	
+	@Override public boolean isNaN() {
+		if (super.isNaN())
+			return true;
+		
+		double x = this.x;
+		if (x != x)
+			return true;
+		
+		double z = this.z;
+		if (z != z)
+			return true;
+		
+		return false;
 	}
 
 }

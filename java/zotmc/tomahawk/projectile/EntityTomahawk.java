@@ -33,6 +33,7 @@ import net.minecraft.world.WorldServer;
 
 import org.apache.logging.log4j.Logger;
 
+import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.Pointable;
 import zotmc.tomahawk.api.TomahawkRegistry;
@@ -138,11 +139,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
         //setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
 		
 		{
-			if (thrower instanceof EntityPlayer)
-				PlayerTracker.get((EntityPlayer) thrower).getLastMotion().addTo(entityMotion);
-			else
-				EntityGeometry.getMotion(thrower).addTo(entityMotion);
-			
+			GeometryHelper.motion(thrower).addTo(entityMotion);
 			setThrowableHeading(motionX, motionY, motionZ, initalSpeed, 1);
 		}
 		
@@ -379,45 +376,43 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	protected void playInAirSound(double v2) {
-		if (!worldObj.isRemote)
-			playSound("random.bow",
-					Utils.closed(0, 1, (float) v2 * 16),
-					1 / (rand.nextFloat() * 0.4F + 1.2F) + 0.5F
-			);
+		ItemStack item = this.item.get();
+		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.IN_AIR);
+		
+		if (hitSound != null)
+			playSound(hitSound.soundName, Utils.closed(0, 1, (float) v2 * 16), hitSound.getPitch());
 	}
 	
-	public boolean playHitSound() {
+	public void playEntityHitSound() {
 		ItemStack item = this.item.get();
-		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getHitSound(item);
+		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.HIT_ENTITY);
 		
-		if (hitSound != null) {
+		if (hitSound != null)
 			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
-			return true;
-		}
-		return false;
 	}
 	
 	public void playBlockHitSound(boolean isStationary, Block block, Vec3i position) {
-		if (!playHitSound()) {
-			float hardness = position.getBlockHardness(worldObj, block);
+		float hardness = position.getBlockHardness(worldObj, block);
+		ItemStack item = this.item.get();
+		SoundType hitSound = TomahawkRegistry.getItemHandler(item)
+				.getSound(item, hardness < 1 ? PlaybackType.HIT_BLOCK_WEAK : PlaybackType.HIT_BLOCK);
+
+		if (hitSound != null)
+			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
+		else if (hardness >= 1) {
 			
-			if (hardness < 1)
-				playSound("random.bowhit", 1.4F, (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 3/5F);
-			else {
-				SoundType s = block.stepSound;
-				float vol = s.getVolume() * 28 / hardness;
-				float pit = s.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
-				
-				if (!isStationary)
-					vol /= 6;
-				
-				int n = (int) vol;
-				for (int i = 0; i < n; i++)
-					playSound(s.getBreakSound(), 1, pit);
-				
-				playSound(s.getBreakSound(), vol - n, pit);
-				
-			}
+			SoundType s = block.stepSound;
+			float vol = s.getVolume() * 28 / hardness;
+			float pit = s.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
+			
+			if (!isStationary)
+				vol /= 6;
+			
+			int n = (int) vol;
+			for (int i = 0; i < n; i++)
+				playSound(s.getBreakSound(), 1, pit);
+			
+			playSound(s.getBreakSound(), vol - n, pit);
 		}
 	}
 	
@@ -481,7 +476,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	protected double getEntityRestitutionFactor() {
-		return 0.27 * (Config.current().reduceEntityRestitution.get() ? 0.2 : 1);
+		return 0.27 * (Config.current().reduceEntityRestitution.get() ? 2/13D : 1);
 	}
 	
 	protected double getBlockRestitutionFactor() {
