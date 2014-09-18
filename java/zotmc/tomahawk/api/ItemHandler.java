@@ -65,7 +65,7 @@ public interface ItemHandler {
 	
 	public enum EnchantmentAction {
 		REPLICA,
-		REPLICA_AT_BOOK,
+		REPLICA_ON_BOOK,
 		INHERIT_GOLDEN_SWORD;
 	}
 	

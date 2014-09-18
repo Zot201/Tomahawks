@@ -5,6 +5,7 @@ import java.util.Random;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
+import zotmc.tomahawk.data.ModData.AxeTomahawk;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 
 /**
@@ -43,12 +44,12 @@ public enum WeaponCategory implements ItemHandler {
 	
 	
 	private static final Random rand = new Random();
-	private static final SoundType inAirSound = new SoundType("tomahawk:random.tomahawk", 1, 1) {
+	private static final SoundType inAirSound = new SoundType(AxeTomahawk.DOMAIN + ":random.tomahawk", 1, 1) {
 		@Override public float getPitch() {
 			return 1 / (rand.nextFloat() * 0.4F + 1.2F) + 0.5F;
 		}
 	};
-	private static final SoundType hitSound = new SoundType("tomahawk:random.tomahawk_hit", 1.5F, 1) {
+	private static final SoundType hitSound = new SoundType(AxeTomahawk.DOMAIN + ":random.tomahawk_hit", 1, 1) {
 		@Override public float getPitch() {
 			return 1.2F / (rand.nextFloat() * 0.2F + 0.9F) - 0.5F;
 		}

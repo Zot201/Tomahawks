@@ -57,7 +57,6 @@ import zotmc.tomahawk.util.IdentityBlockMeta;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.CartesianVec3f;
-import zotmc.tomahawk.util.geometry.EntityGeometry;
 import zotmc.tomahawk.util.geometry.HybridVec3d;
 import zotmc.tomahawk.util.geometry.Vec3f;
 import zotmc.tomahawk.util.prop.Props;
@@ -134,8 +133,10 @@ public class TomahawksCore {
 	
 	@EventHandler public void init(FMLInitializationEvent event) {
 		MinecraftForge.EVENT_BUS.register(this);
-		
 		Utils.invokeIfExists(this, TomahawksCore.class, "registerRenderer");
+		
+		if (Utils.MC_VERSION.isBelow("1.7.2"))
+			MinecraftForge.EVENT_BUS.register(new SoundLoadHandler());
 		
 		try {
 			DispenserHandler.init();

@@ -4,6 +4,7 @@ import static zotmc.tomahawk.util.Refls.findClass;
 
 import java.lang.reflect.Field;
 
+import net.minecraft.client.audio.SoundManager;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -28,6 +29,16 @@ public class ReflData {
 	
 	public static class Bootstraps {
 		public static final Field MC_VERSION = Refls.findField(Loader.class, "MC_VERSION", "mccversion"); // -, 172
+	}
+	
+	public static final Optional<SoundManagers>
+	soundManagers = Utils.constructIf(Utils.MC_VERSION.isBelow("1.7.2"), SoundManagers.class);
+	
+	public static class SoundManagers {
+		public final Invokable<SoundManager, Void>
+		addSound = Refls.findMethod(SoundManager.class, "addSound", "func_77372_a")
+			.asInvokable(String.class)
+			.returning(void.class);
 	}
 	
 	public static class EntityArrows {
