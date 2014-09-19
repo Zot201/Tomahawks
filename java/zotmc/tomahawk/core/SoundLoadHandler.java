@@ -1,6 +1,7 @@
 package zotmc.tomahawk.core;
 
 import static com.google.common.base.Preconditions.checkState;
+import static cpw.mods.fml.relauncher.Side.CLIENT;
 import net.minecraft.client.audio.SoundManager;
 import net.minecraftforge.client.event.sound.SoundLoadEvent;
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
@@ -10,7 +11,9 @@ import zotmc.tomahawk.util.Utils;
 import com.google.common.base.Throwables;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.relauncher.SideOnly;
 
+@SideOnly(CLIENT)
 public class SoundLoadHandler {
 	
 	SoundLoadHandler() {

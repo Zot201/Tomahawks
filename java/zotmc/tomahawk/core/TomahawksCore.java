@@ -127,16 +127,17 @@ public class TomahawksCore {
 	}
 	
 	@SideOnly(CLIENT)
-	private void registerRenderer() {
+	private void registerHandlers() {
 		RenderingRegistry.registerEntityRenderingHandler(EntityTomahawk.class, new RenderTomahawk());
+		
+		if (Utils.MC_VERSION.isBelow("1.7.2"))
+			MinecraftForge.EVENT_BUS.register(new SoundLoadHandler());
 	}
 	
 	@EventHandler public void init(FMLInitializationEvent event) {
 		MinecraftForge.EVENT_BUS.register(this);
-		Utils.invokeIfExists(this, TomahawksCore.class, "registerRenderer");
 		
-		if (Utils.MC_VERSION.isBelow("1.7.2"))
-			MinecraftForge.EVENT_BUS.register(new SoundLoadHandler());
+		Utils.invokeIfExists(this, TomahawksCore.class, "registerHandlers");
 		
 		try {
 			DispenserHandler.init();
