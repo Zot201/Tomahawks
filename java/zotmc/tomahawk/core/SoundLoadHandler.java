@@ -5,7 +5,7 @@ import static cpw.mods.fml.relauncher.Side.CLIENT;
 import net.minecraft.client.audio.SoundManager;
 import net.minecraftforge.client.event.sound.SoundLoadEvent;
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
-import zotmc.tomahawk.data.ReflData;
+import zotmc.tomahawk.data.ReflData.ClientRefls;
 import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Throwables;
@@ -22,7 +22,7 @@ public class SoundLoadHandler {
 	
 	private void addSound(SoundManager manager, String path) {
 		try {
-			ReflData.soundManagers.get().addSound.invoke(manager, path);
+			ClientRefls.soundManagers.get().addSound.invoke(manager, path);
 		} catch (Throwable e) {
 			throw Throwables.propagate(e);
 		}

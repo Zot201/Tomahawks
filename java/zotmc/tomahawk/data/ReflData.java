@@ -1,5 +1,6 @@
 package zotmc.tomahawk.data;
 
+import static cpw.mods.fml.relauncher.Side.CLIENT;
 import static zotmc.tomahawk.util.Refls.findClass;
 
 import java.lang.reflect.Field;
@@ -24,6 +25,7 @@ import com.google.common.reflect.Invokable;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.ASMEventHandler;
 import cpw.mods.fml.common.eventhandler.EventBus;
+import cpw.mods.fml.relauncher.SideOnly;
 
 public class ReflData {
 	
@@ -31,14 +33,17 @@ public class ReflData {
 		public static final Field MC_VERSION = Refls.findField(Loader.class, "MC_VERSION", "mccversion"); // -, 172
 	}
 	
-	public static final Optional<SoundManagers>
-	soundManagers = Utils.constructIf(Utils.MC_VERSION.isBelow("1.7.2"), SoundManagers.class);
-	
-	public static class SoundManagers {
-		public final Invokable<SoundManager, Void>
-		addSound = Refls.findMethod(SoundManager.class, "addSound", "func_77372_a")
-			.asInvokable(String.class)
-			.returning(void.class);
+	@SideOnly(CLIENT)
+	public static class ClientRefls {
+		public static final Optional<SoundManagers>
+		soundManagers = Utils.constructIf(Utils.MC_VERSION.isBelow("1.7.2"), SoundManagers.class);
+		
+		public static class SoundManagers {
+			public final Invokable<SoundManager, Void>
+			addSound = Refls.findMethod(SoundManager.class, "addSound", "func_77372_a")
+				.asInvokable(String.class)
+				.returning(void.class);
+		}
 	}
 	
 	public static class EntityArrows {
