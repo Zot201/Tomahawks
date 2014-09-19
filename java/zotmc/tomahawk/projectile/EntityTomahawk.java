@@ -476,7 +476,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	}
 	
 	protected double getEntityRestitutionFactor() {
-		return 0.27 * (Config.current().reduceEntityRestitution.get() ? 2/13D : 1);
+		return 0.27 * (Config.current().reduceEntityRestitution.get() ? 1/6D : 1);
 	}
 	
 	protected double getBlockRestitutionFactor() {

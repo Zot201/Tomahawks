@@ -26,14 +26,13 @@ public class SoundLoadHandler {
 	}
 	
 	@SubscribeEvent public void onSoundLoad(SoundLoadEvent event) {
-		@SuppressWarnings("deprecation")
-		SoundManager m = event.manager;
+		@SuppressWarnings("deprecation") SoundManager m = event.manager;
 		
-		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk");
-		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit1");
-		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit2");
-		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit3");
-		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit4");
+		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk.ogg");
+		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit1.ogg");
+		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit2.ogg");
+		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit3.ogg");
+		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk_hit4.ogg");
 	}
 
 }
