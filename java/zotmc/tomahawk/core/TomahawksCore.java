@@ -38,7 +38,6 @@ import zotmc.tomahawk.api.DamageTypeAdaptor;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
 import zotmc.tomahawk.api.TomahawkRegistry;
-import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.config.GuiConfigScreenResolver;
@@ -51,15 +50,12 @@ import zotmc.tomahawk.ench.EnchReplica;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.projectile.RenderTomahawk;
-import zotmc.tomahawk.projectile.TickerTomahawk;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
-import zotmc.tomahawk.util.IdentityBlockMeta;
+import zotmc.tomahawk.util.DummyWorld;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.CartesianVec3f;
-import zotmc.tomahawk.util.geometry.HybridVec3d;
 import zotmc.tomahawk.util.geometry.Vec3f;
-import zotmc.tomahawk.util.prop.Props;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.MissingModsException;
@@ -81,8 +77,7 @@ import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(modid = CORE_MODID, name = CORE_NAME, version = VERSION,
-		dependencies = CORE_DEPENDENCIES, guiFactory = CORE_GUI_FACTORY)
+@Mod(modid = CORE_MODID, name = CORE_NAME, version = VERSION, dependencies = CORE_DEPENDENCIES, guiFactory = CORE_GUI_FACTORY)
 public class TomahawksCore {
 	
 	@Instance(CORE_MODID) public static TomahawksCore instance;
@@ -139,12 +134,6 @@ public class TomahawksCore {
 		
 		Utils.invokeIfExists(this, TomahawksCore.class, "registerHandlers");
 		
-		try {
-			DispenserHandler.init();
-		} catch (Throwable e) {
-			TomahawksCore.instance.log.catching(e);
-		}
-		
 		
 		if (Loader.isModLoaded(AdditionalEnchantments.MODID)) {
 			if (Utils.MC_VERSION.isAtLeast("1.7.2"))
@@ -169,14 +158,23 @@ public class TomahawksCore {
 	}
 	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
-		Utils.initialize(EntityTomahawk.class, TickerTomahawk.class, HybridVec3d.class, Props.class,
-				IdentityBlockMeta.class, WeaponLaunchEvent.class, WeaponDispenseEvent.class);
+		try {
+			new EntityTomahawk(new DummyWorld());
+		} catch (Throwable e) {
+			log.catching(e);
+		}
 		
 		Utils.invokeDeclared(LoadingPluginTomahawk.class, "postInit");
 	}
 	
 	@EventHandler public void onAvailable(FMLLoadCompleteEvent event) {
 		Utils.invokeDeclared(TomahawkAPI.class, "onAvailable");
+		
+		try {
+			DispenserHandler.init();
+		} catch (Throwable e) {
+			TomahawksCore.instance.log.catching(e);
+		}
 	}
 	
 	@EventHandler public void onServerStart(FMLServerAboutToStartEvent event) {

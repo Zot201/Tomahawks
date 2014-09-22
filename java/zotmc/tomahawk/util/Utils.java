@@ -164,7 +164,7 @@ public class Utils {
 		return localize(unlocalized, new Object[0]);
 	}
 	public static Supplier<String> localize(final String unlocalized, Object... args) {
-		final Object[] copy = Arrays.copyOf(args, args.length);
+		final Object[] copy = args.clone();
 		
 		return new Supplier<String>() {
 			@Override public String get() {
@@ -390,15 +390,6 @@ public class Utils {
 					return endOfData();
 			}
 		}
-	}
-	
-	public static void initialize(Class<?>... a) {
-		for (Class<?> c : a)
-			try {
-				Class.forName(c.getName());
-			} catch (ClassNotFoundException e) {
-				throw Throwables.propagate(e);
-			}
 	}
 	
 	

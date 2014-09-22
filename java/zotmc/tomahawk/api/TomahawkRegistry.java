@@ -94,7 +94,14 @@ public class TomahawkRegistry {
 							delegations.put(entry.getKey(), entry.getValue());
 					
 					
-					Launchable launchable = c.getAnnotation(Launchable.class);
+					Launchable launchable = null;
+					try {
+						launchable = c.getAnnotation(Launchable.class);
+					} catch (Throwable e) {
+						TomahawksCore.instance.log.error("Failed to get annotation for %s", c);
+						TomahawksCore.instance.log.catching(e);
+					}
+					
 					if (launchable != null) {
 						ItemHandler value = Enums.getIfPresent(WeaponCategory.class, launchable.value()).orNull();
 						

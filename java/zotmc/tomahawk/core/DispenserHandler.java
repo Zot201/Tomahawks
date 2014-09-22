@@ -11,6 +11,8 @@ import net.minecraft.dispenser.IPosition;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.IRegistry;
+import net.minecraft.util.RegistryDefaulted;
 import net.minecraft.world.World;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
@@ -22,17 +24,42 @@ import zotmc.tomahawk.util.Fields;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.prop.Prop;
 
-import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 
 class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 	
 	static void init() {
-		final Prop<Map<Item, IBehaviorDispenseItem>> registryObjects = Fields
-				.referTo(BlockDispenser.dispenseBehaviorRegistry, Fields.definalize(ReflData.REGISTRY_OBJECTS))
-				.ofType(new TypeToken<Map<Item, IBehaviorDispenseItem>>() { });
-		
-		registryObjects.set(new DispenserHandler(registryObjects.get()));
+		if (BlockDispenser.dispenseBehaviorRegistry.getClass() == RegistryDefaulted.class) {
+			Prop<Map<Item, IBehaviorDispenseItem>> registryObjects = Fields
+					.referTo(BlockDispenser.dispenseBehaviorRegistry, Fields.definalize(ReflData.REGISTRY_OBJECTS))
+					.ofType(new TypeToken<Map<Item, IBehaviorDispenseItem>>() { });
+			
+			registryObjects.set(new DispenserHandler(registryObjects.get()));
+			
+			LogTomahawk.api4j().debug("Handled dispense behavior by wrapping %s", ReflData.REGISTRY_OBJECTS);
+		}
+		else {
+			Prop<IRegistry> dispenseBehaviorRegistry = Fields
+					.referTo(BlockDispenser.class, Fields.definalize(ReflData.DISPENSE_BEHAVIOR_REGISTRY))
+					.ofType(IRegistry.class);
+			
+			final IRegistry backing = dispenseBehaviorRegistry.get();
+			final DispenserHandler handler = new DispenserHandler(ImmutableMap.<Item, IBehaviorDispenseItem>of());
+			
+			dispenseBehaviorRegistry.set(new IRegistry() {
+				@Override public void putObject(Object key, Object value) {
+					backing.putObject(key, value);
+				}
+				
+				@Override public Object getObject(Object key) {
+					Object ret = backing.getObject(key);
+					return ret != null ? ret : handler.fallback(key);
+				}
+			});
+			
+			LogTomahawk.api4j().debug("Handled dispense behavior by wrapping %s", ReflData.DISPENSE_BEHAVIOR_REGISTRY);
+		}
 	}
 	
 	
@@ -46,15 +73,10 @@ class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 	@Override protected Map<Item, IBehaviorDispenseItem> delegate() {
 		return delegatee;
 	}
-	@Override protected Function<Item, IBehaviorDispenseItem> function() {
-		return function;
-	}
 	
-	private final Function<Item, IBehaviorDispenseItem> function = new Function<Item, IBehaviorDispenseItem>() {
-		@Override public IBehaviorDispenseItem apply(Item input) {
-			return input != null && TomahawkRegistry.getItemHandler(input).isEnabled() ? dispenseWeapon : null;
-		}
-	};
+	@Override protected IBehaviorDispenseItem fallback(Object input) {
+		return input instanceof Item && TomahawkRegistry.getItemHandler((Item) input).isEnabled() ? dispenseWeapon : null;
+	}
 	
 	private final IBehaviorDispenseItem dispenseWeapon = new BehaviorProjectileDispense() {
 		@Override protected IProjectile getProjectileEntity(World world, IPosition pos) {
