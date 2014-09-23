@@ -219,6 +219,7 @@ public class TickerTomahawk implements Runnable {
 			case UP:
 				hawk.state.set(ON_GROUND);
 				hawk.inTile = hawk.pos.getBlockMeta(hawk.worldObj, DOWN);
+				hawk.isInclined.set(hawk.pos.canBlockCollideCheck(hawk.worldObj, true));
 				//fall through
 			case DOWN:
 				f = motion.y();
@@ -250,6 +251,7 @@ public class TickerTomahawk implements Runnable {
 				if (hawk.ticksInGround.get() > 8) {
 					hawk.state.set(ON_GROUND);
 					hawk.inTile = hawk.pos.getBlockMeta(hawk.worldObj, DOWN);
+					hawk.isInclined.set(hawk.pos.canBlockCollideCheck(hawk.worldObj, true));
 					hawk.ticksInGround.set(0);
 				}
 			}

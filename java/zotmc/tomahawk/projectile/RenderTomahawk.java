@@ -78,7 +78,7 @@ public class RenderTomahawk extends Render {
 			
 			State state = et.state.get();
 			if (state == State.ON_GROUND) {
-				if (et.pos.canBlockCollideCheck(et.worldObj, true)) {
+				if (et.isInclined.get()) {
 					glRotatef(-8 * (Math.abs(et.aRoll) + 3), 1, 0, 0);
 					glRotatef(-8 * (Math.abs(et.aRoll) + 3), 0, 0, 1);
 				}

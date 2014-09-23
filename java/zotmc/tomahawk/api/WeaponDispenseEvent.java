@@ -15,7 +15,7 @@ public class WeaponDispenseEvent extends Event {
 	
 	public final ItemStack item;
 	public final ItemHandler handler;
-	public float initialSpeed = 1.1F;
+	public float initialSpeed;
 	public float deviation = 6;
 	private PickUpType pickUpType = PickUpType.SURVIVAL;
 	public boolean isForwardSpin = true, isFragile;
@@ -34,6 +34,7 @@ public class WeaponDispenseEvent extends Event {
 		
 		this.item = checkNotNull(item);
 		this.handler = checkNotNull(handler);
+		initialSpeed = handler.getInitialSpeed(item);
 	}
 	
 	public boolean run() {

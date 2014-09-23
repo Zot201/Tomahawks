@@ -214,6 +214,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	public final BooleanProp isFixed = Props.ofBoolean(this, 4, 2);
 	public final BooleanProp isFragile = Props.ofBoolean(this, 4, 3);
 	public final BooleanProp isBreaking = Props.ofBoolean(this, 4, 4);
+	public final BooleanProp isInclined = Props.ofBoolean(this, 4, 5);
 	
 	private ByteProp stateByte = Props.ofByte(this, 5);
 	public Prop<State> state = Props.ofEnum(State.class, stateByte);
@@ -236,6 +237,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		tags.setBoolean("isFixed", isFixed.get());
 		tags.setByte("sideHit", (byte) sideHit);
 		tags.setTag("inTileMeta", inTile.toNBT());
+		tags.setBoolean("isInclined", isInclined.get());
 	}
 	@Override public void readEntityFromNBT(NBTTagCompound tags) {
 		super.readEntityFromNBT(tags);
@@ -252,6 +254,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		isFixed.set(tags.getBoolean("isFixed"));
 		sideHit = tags.getByte("sideHit");
 		inTile = IdentityBlockMeta.readFromNBT(tags.getCompoundTag("inTileMeta"));
+		isInclined.set(tags.getBoolean("isInclined"));
 	}
 	
 	
