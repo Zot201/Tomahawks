@@ -33,7 +33,7 @@ public class DummyWorld extends World {
 	}
 	
 	@Override protected IChunkProvider createChunkProvider() {
-		return new DummyChunkProvider();
+		return new DummyChunkProvider(this);
 	}
 	@Override protected int func_152379_p() {
 		return 0;
@@ -68,14 +68,19 @@ public class DummyWorld extends World {
 	}
 	
 	private static class DummyChunkProvider implements IChunkProvider {
+		private final World world;
+		private DummyChunkProvider(World world) {
+			this.world = world;
+		}
+		
 		@Override public boolean chunkExists(int x, int y) {
-			return false;
+			return true;
 		}
 		@Override public Chunk provideChunk(int x, int y) {
-			return null;
+			return new Chunk(world, x, y);
 		}
 		@Override public Chunk loadChunk(int x, int y) {
-			return null;
+			return new Chunk(world, x, y);
 		}
 		@Override public void populate(IChunkProvider provider, int x, int y) { }
 		@Override public boolean saveChunks(boolean flag, IProgressUpdate progress) {
@@ -103,5 +108,5 @@ public class DummyWorld extends World {
 		@Override public void recreateStructures(int x, int y) { }
 		@Override public void saveExtraData() { }
 	}
-
+	
 }
