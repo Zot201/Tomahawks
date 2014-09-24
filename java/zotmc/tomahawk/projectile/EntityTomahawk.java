@@ -12,7 +12,6 @@ import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_AIR;
 
 import java.lang.ref.WeakReference;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
@@ -55,6 +54,7 @@ import zotmc.tomahawk.util.geometry.Vec3d;
 import zotmc.tomahawk.util.geometry.Vec3i;
 import zotmc.tomahawk.util.prop.BooleanProp;
 import zotmc.tomahawk.util.prop.ByteProp;
+import zotmc.tomahawk.util.prop.FloatProp;
 import zotmc.tomahawk.util.prop.IntProp;
 import zotmc.tomahawk.util.prop.Prop;
 import zotmc.tomahawk.util.prop.Props;
@@ -72,10 +72,6 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		}
 	}
 	
-	
-	public final float
-	aRoll = worldObj.isRemote ? (float) ThreadLocalRandom.current().nextGaussian() * 15/2F : 0,
-	bRoll = worldObj.isRemote ? (float) ThreadLocalRandom.current().nextGaussian() * 1/2F : 0;
 	
 	public final Vec3d entityMotion = EntityGeometry.getMotion(this);
 	public final Angle entityRotationYaw = EntityGeometry.getRotationYaw(this);
@@ -123,7 +119,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		super(world, pos.getX(), pos.getY(), pos.getZ());
 		setSize(0.6F, 0.6F);
 		
-		initItem(item);
+		projectileInit(item);
 		
 		if (!world.isRemote) {
 			BaseAttributeMap attrs = new ServersideAttributeMap();
@@ -145,7 +141,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		
 		entityRotationYaw.setRadians(entityMotion.yaw());
 		
-		initItem(item);
+		projectileInit(item);
 		
 		if (!world.isRemote) {
 			damageAttr = (float) thrower.getEntityAttribute(attackDamage).getAttributeValue();
@@ -184,10 +180,13 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		);
 	}
 	
-	protected void initItem(ItemStack item) {
+	protected void projectileInit(ItemStack item) {
 		this.item.set(item);
 		if (Config.current().igniteFireRespect.get() && Utils.getEnchLevel(Enchantment.fireAspect, item) > 0)
 			setFire(100);
+		
+		aRoll.set((float) rand.nextGaussian() * 15/2F);
+		bRoll.set((float) rand.nextGaussian()  * 1/2F);
 	}
 	
 	protected Runnable createTicker() {
@@ -202,6 +201,8 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		getDataWatcher().addObject(3, (int) -1);
 		getDataWatcher().addObject(4, (byte) 0b1);
 		getDataWatcher().addObject(5, (byte) 0);
+		getDataWatcher().addObject(6, (float) 0);
+		getDataWatcher().addObject(7, (float) 0);
 		getDataWatcher().addObjectByDataType(10, 5);
 	}
 	
@@ -218,6 +219,9 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	
 	private ByteProp stateByte = Props.ofByte(this, 5);
 	public Prop<State> state = Props.ofEnum(State.class, stateByte);
+	
+	public final FloatProp aRoll = Props.ofFloat(this, 6);
+	public final FloatProp bRoll = Props.ofFloat(this, 7);
 	
 	public final Prop<ItemStack> item = Props.ofItemStack(this, 10);
 	
@@ -238,7 +242,10 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		tags.setByte("sideHit", (byte) sideHit);
 		tags.setTag("inTileMeta", inTile.toNBT());
 		tags.setBoolean("isInclined", isInclined.get());
+		tags.setFloat("aRoll", aRoll.get());
+		tags.setFloat("bRoll", bRoll.get());
 	}
+	
 	@Override public void readEntityFromNBT(NBTTagCompound tags) {
 		super.readEntityFromNBT(tags);
 		stateByte.set(tags.getByte("state"));
@@ -255,6 +262,8 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		sideHit = tags.getByte("sideHit");
 		inTile = IdentityBlockMeta.readFromNBT(tags.getCompoundTag("inTileMeta"));
 		isInclined.set(tags.getBoolean("isInclined"));
+		aRoll.set(tags.getFloat("aRoll"));
+		bRoll.set(tags.getFloat("bRoll"));
 	}
 	
 	

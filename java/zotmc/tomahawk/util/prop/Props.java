@@ -104,5 +104,16 @@ public class Props {
 			}
 		};
 	}
+	
+	public static FloatProp ofFloat(final Entity entity, final int key) {
+		return new FloatProp() {
+			@Override public float get() {
+				return entity.getDataWatcher().getWatchableObjectFloat(key);
+			}
+			@Override public void set(float value) {
+				entity.getDataWatcher().updateObject(key, value);
+			}
+		};
+	}
 
 }

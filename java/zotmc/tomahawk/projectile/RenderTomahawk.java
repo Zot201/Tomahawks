@@ -73,14 +73,16 @@ public class RenderTomahawk extends Render {
 		{
 			glTranslatef((float) x, (float) y, (float) z);
 			
-			
-			glRotatef(p - 90 - et.aRoll, 0, 1, 0);
+			float aRoll = et.aRoll.get();
+			glRotatef(p - 90 - aRoll, 0, 1, 0);
 			
 			State state = et.state.get();
 			if (state == State.ON_GROUND) {
 				if (et.isInclined.get()) {
-					glRotatef(-8 * (Math.abs(et.aRoll) + 3), 1, 0, 0);
-					glRotatef(-8 * (Math.abs(et.aRoll) + 3), 0, 0, 1);
+					float f = -8 * (Math.abs(aRoll) + 3);
+					
+					glRotatef(f, 1, 0, 0);
+					glRotatef(f, 0, 0, 1);
 				}
 				
 				glRotatef(90, 1, 0, 0);
@@ -96,7 +98,7 @@ public class RenderTomahawk extends Render {
 			
 			glRotatef(-et.rotation.toDegrees(), 0, 0, 1);
 			
-			glRotatef(-et.bRoll, 0, 1, 0);
+			glRotatef(-et.bRoll.get(), 0, 1, 0);
 			
 			
 			glTranslatef(-7/16f, -12/16f, ITEM_Z / 2);

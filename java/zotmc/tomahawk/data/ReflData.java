@@ -111,7 +111,8 @@ public class ReflData {
 	BUS_ID = Utils.getDeclaredField(EventBus.class, "busID"),
 	HANDLER = Utils.getDeclaredField(ASMEventHandler.class, "handler"),
 	REGISTRY_OBJECTS = Refls.findField(RegistrySimple.class, "registryObjects", "field_82596_a"),
-	DISPENSE_BEHAVIOR_REGISTRY = Refls.findField(BlockDispenser.class, "dispenseBehaviorRegistry", "field_149943_a"),
+	DISPENSE_BEHAVIOR_REGISTRY =
+			Refls.findField(BlockDispenser.class, "dispenseBehaviorRegistry", "field_149943_a", "field_82527_a"), // -, -, 164
 	SIN_TABLE = Refls.findField(MathHelper.class, "SIN_TABLE", "field_76144_a");
 	
 	public static final Optional<Field>
