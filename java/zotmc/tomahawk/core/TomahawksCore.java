@@ -21,6 +21,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
@@ -51,6 +52,8 @@ import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.projectile.RenderTomahawk;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
+import zotmc.tomahawk.util.DummyPlayer;
+import zotmc.tomahawk.util.DummyWorld;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
 import zotmc.tomahawk.util.geometry.CartesianVec3f;
@@ -165,6 +168,14 @@ public class TomahawksCore {
 		
 		try {
 			DispenserHandler.init();
+		} catch (Throwable e) {
+			log.catching(e);
+		}
+		
+		try {
+			World world = new DummyWorld();
+			new EntityTomahawk(world, new DummyPlayer(world), 1, new ItemStack(Items.arrow)).onUpdate();
+			
 		} catch (Throwable e) {
 			log.catching(e);
 		}

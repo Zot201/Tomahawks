@@ -392,15 +392,6 @@ public class Utils {
 		}
 	}
 	
-	public static void initialize(Class<?>... a) {
-		for (Class<?> c : a)
-			try {
-				Class.forName(c.getName());
-			} catch (ClassNotFoundException e) {
-				throw Throwables.propagate(e);
-			}
-	}
-	
 	
 	
 	// asm
