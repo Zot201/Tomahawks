@@ -28,15 +28,15 @@ import cpw.mods.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServer
 import cpw.mods.fml.relauncher.Side;
 
 public class Config {
-	
+
 	private static final String
 	GENERAL = "general",
 	ENCHS = "enchantments",
 	COMPS = "compatibilities",
 	DEBUG = "debug";
-	
+
 	private static final boolean FREE_RETREIVAL_DEFAULT = Utils.MC_VERSION.isBelow("1.7.2");
-	
+
 	@ApplyHot
 	public final Configurable<Boolean>
 	commonAxesThrowing = new ConfigurableBoolean(GENERAL, "commonAxesThrowing").set(true);
@@ -47,7 +47,7 @@ public class Config {
 	public final Configurable<Boolean>
 	freeRetrieval = new ConfigurableBoolean(GENERAL, "freeRetrieval").set(FREE_RETREIVAL_DEFAULT),
 	reduceEntityRestitution = new ConfigurableBoolean(GENERAL, "reduceEntityRestitution").set(true);
-	
+
 	@ApplyHot @Core
 	public final Configurable<Boolean>
 	goldenFusion = new ConfigurableBoolean(ENCHS, "goldenFusion"),
@@ -55,51 +55,56 @@ public class Config {
 	@Core
 	public final Configurable<Integer>
 	replica = new ConfigurableInteger(ENCHS, "replica").set(143);
-	
+
 	@ApplyHot
 	public final Configurable<Boolean>
 	tiCHatchetsThrowing = new ConfigurableBoolean(COMPS, "tiCHatchetsThrowing").set(true),
 	tiCLumerAxesThrowing = new ConfigurableBoolean(COMPS, "tiCLumberAxesThrowing").set(true),
 	tiCFryingPansThrowing = new ConfigurableBoolean(COMPS, "tiCFryingPansThrowing")/*,
 	tiCHammersThrowing = new ConfigurableBoolean(COMPS, "tiCHammersThrowing").set(true)*/;
-	
+
+	@ApplyHot
+	public final Configurable<Boolean>
+	mekAxesThrowing = new ConfigurableBoolean(COMPS, "mekAxesThrowing").set(true),
+	mekPaxelsThrowing = new ConfigurableBoolean(COMPS, "mekPaxelsThrowing").set(true);
+
 	@ApplyHot @Core @NoSync
 	public final Configurable<Set<LogCategory>>
 	debugLoggings = new ConfigurableEnumSet<>(LogCategory.class, DEBUG, "loggings");
-	
-	
-	
+
+
+
 	private static Configuration configFile;
 	private static Config preserved, local, current;
-	
+
 	Config() { }
-	
+
 	public static void init(Configuration configFile) {
 		checkState(Config.configFile == null, "Already initialized");
 		Config.configFile = checkNotNull(configFile);
 		preserved = new Config().load().save();
 		local = preserved.copy();
 		current = local;
-		
+
 		FMLCommonHandler.instance().bus().register(preserved);
 		TomahawksCore.instance.network.registerMessage(ConfigPacketHandler.class, ConfigPacket.class, 0, Side.CLIENT);
 	}
-	
+
 	@SubscribeEvent public void onClientConnect(PlayerLoggedInEvent event) {
 		if (event.player instanceof EntityPlayerMP)
 			TomahawksCore.instance.network.sendTo(new ConfigPacket(local), (EntityPlayerMP) event.player);
 	}
-	
+
 	static void onServerConnect(ConfigPacket packet) {
 		current = packet.value;
 		TomahawksCore.instance.onServerStart(null);
 	}
-	
+
 	@SubscribeEvent public void onServerDisconnect(ClientDisconnectionFromServerEvent event) {
 		current = local;
 		TomahawksCore.instance.onServerStop(null);
 	}
-	
+
 	static Config preserved() {
 		return preserved;
 	}
@@ -109,9 +114,9 @@ public class Config {
 	public static Config current() {
 		return current;
 	}
-	
-	
-	
+
+
+
 	private static Iterable<Field> configurableFields() {
 		return Utils.asIterable(Config.class.getDeclaredFields())
 				.filter(new Predicate<Field>() { public boolean apply(Field input) {
@@ -119,7 +124,7 @@ public class Config {
 							&& Configurable.class.isAssignableFrom(input.getType());
 				}});
 	}
-	
+
 	Config apply(Config config) {
 		for (Field f : configurableFields())
 			Fields.<Configurable<Object>>get(this, f).set(
@@ -127,7 +132,7 @@ public class Config {
 			);
 		return this;
 	}
-	
+
 	Config applyCore(Config config) {
 		for (Field f : configurableFields())
 			if (f.getAnnotation(Core.class) != null)
@@ -136,7 +141,7 @@ public class Config {
 				);
 		return this;
 	}
-	
+
 	Config applyNonCore(Config config) {
 		for (Field f : configurableFields())
 			if (f.getAnnotation(Core.class) == null)
@@ -145,7 +150,7 @@ public class Config {
 				);
 		return this;
 	}
-	
+
 	Config applyHot(Config config) {
 		for (Field f : configurableFields())
 			if (f.getAnnotation(ApplyHot.class) != null)
@@ -154,24 +159,24 @@ public class Config {
 				);
 		return this;
 	}
-	
+
 	Config load() {
 		for (Field f : configurableFields())
 			Fields.<Configurable<?>>get(this, f).load(configFile);
 		return this;
 	}
-	
+
 	Config save() {
 		for (Field f : configurableFields())
 			Fields.<Configurable<?>>get(this, f).save(configFile);
 		return this;
 	}
-	
+
 	Config copy() {
 		return new Config().apply(this);
 	}
-	
-	
+
+
 	NBTTagCompound writeToNBT() {
 		NBTTagCompound tags = new NBTTagCompound();
 		for (Field f : configurableFields())
@@ -179,7 +184,7 @@ public class Config {
 				tags.setTag(f.getName(), Fields.<Configurable<?>>get(this, f).writeToNBT());
 		return tags;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	Config readFromNBT(NBTTagCompound tags) {
 		for (String key : (Set<String>) tags.func_150296_c())
@@ -189,11 +194,11 @@ public class Config {
 			} catch (Throwable e) {
 				TomahawksCore.instance.log.catching(e);
 			}
-		
+
 		return this;
 	}
-	
-	
+
+
 	boolean nonCoreNonHotEqualTo(Config config) {
 		for (Field f : configurableFields())
 			if (f.getAnnotation(ApplyHot.class) == null && f.getAnnotation(Core.class) != null
@@ -201,7 +206,7 @@ public class Config {
 				return false;
 		return true;
 	}
-	
+
 	boolean coreNonHotEqualTo(Config config) {
 		for (Field f : configurableFields())
 			if (f.getAnnotation(ApplyHot.class) == null && f.getAnnotation(Core.class) != null
@@ -209,18 +214,18 @@ public class Config {
 				return false;
 		return true;
 	}
-	
-	
+
+
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.FIELD)
 	private @interface ApplyHot { }
-	
+
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.FIELD)
 	private @interface Core { }
-	
+
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.FIELD)
 	private @interface NoSync { }
-	
+
 }

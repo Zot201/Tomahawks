@@ -43,13 +43,13 @@ import cpw.mods.fml.common.registry.EntityRegistry;
 
 @Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES, guiFactory = GUI_FACTORY)
 public class Tomahawks {
-	
+
 	private final Logger log = LogManager.getFormatterLogger(MODID);
-	
+
 	@EventHandler public void preInit(FMLPreInitializationEvent event) {
 		ModData.init(event.getModMetadata());
 	}
-	
+
 	@EventHandler public void init(FMLInitializationEvent event) {
 		TomahawkRegistry.registerItemHandler(ItemAxe.class, new Object() {
 			@Category public WeaponCategory category() {
@@ -59,7 +59,7 @@ public class Tomahawks {
 				return Config.current().commonAxesThrowing.get();
 			}
 		});
-		
+
 		if (Loader.isModLoaded(TConstruct.MODID))
 			try {
 				TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.HATCHET), new Object() {
@@ -73,7 +73,7 @@ public class Tomahawks {
 						return false;
 					}
 				});
-				
+
 				EntityRegistry.registerModEntity(EntityLumberAxe.class, "lumberAxe", 0, this, 64, 18, true);
 				TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.LUMBER_AXE), new Object() {
 					@Category public WeaponCategory category() {
@@ -95,7 +95,7 @@ public class Tomahawks {
 						return new EntityLumberAxe(event);
 					}
 				});
-				
+
 				/*TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.HAMMER), new Object() {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.HAMMER;
@@ -107,7 +107,7 @@ public class Tomahawks {
 						return false;
 					}
 				});*/
-				
+
 				final Random rand = new Random();
 				final SoundType hitSound = new SoundType(TConstruct.FRYPAN_HIT, 1, 1) {
 					@Override public float getPitch() {
@@ -129,12 +129,28 @@ public class Tomahawks {
 						return false;
 					}
 				});
-				
+
 			} catch (Throwable e) {
 				log.catching(e);
 			}
+
+		if (Loader.isModLoaded(ModData.Mekanism.MODID))
+			try {
+				TomahawkRegistry.registerItemHandler(Class.forName(ModData.Mekanism.AXE), new Object() {
+					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
+					@ConfigState public boolean isEnabled() { return Config.current().mekAxesThrowing.get(); }
+				});
+
+				TomahawkRegistry.registerItemHandler(Class.forName(ModData.Mekanism.PAXEL), new Object() {
+					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
+					@ConfigState public boolean isEnabled() { return Config.current().mekPaxelsThrowing.get(); }
+				});
+			} catch (Throwable e) {
+				log.catching(e);
+			}
+
 	}
-	
+
 	public static class EntityLumberAxe extends EntityTomahawk {
 		public EntityLumberAxe(World world) {
 			super(world);
