@@ -6,18 +6,24 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.config.Config;
+import zotmc.tomahawk.core.TomahawksCore.LoadComplete;
+import zotmc.tomahawk.core.TomahawksCore.ServerAboutToStart;
+import zotmc.tomahawk.core.TomahawksCore.ServerStopping;
 import zotmc.tomahawk.util.Feature;
 import zotmc.tomahawk.util.Reserve;
 
 import com.google.common.collect.Sets;
 
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class TomahawkAPI {
 	
 	public static final Feature<Enchantment> replica = Reserve.absent();
 	
 	private static Set<Item> itemBlacklist;
+	
+	private TomahawkAPI() { }
 	
 	
 	public static boolean isLaunchable(ItemStack item) {
@@ -32,12 +38,11 @@ public class TomahawkAPI {
 	}
 	
 	public static boolean isItemBlacklisted(Item item) {
-		return (itemBlacklist != null ? itemBlacklist : Config.current().itemBlacklist.asItems().get())
-				.contains(item);
+		return (itemBlacklist != null ? itemBlacklist : Config.current().itemBlacklist.asItems().get()).contains(item);
 	}
 	
 	
-	private static final void onAvailable() {
+	@SubscribeEvent public void onAvailable(LoadComplete event) {
 		try {
 			TomahawkRegistry.computeItemHandlers();
 		} catch (Throwable e) {
@@ -50,12 +55,12 @@ public class TomahawkAPI {
 		}
 	}
 	
-	private static final void onServerStart() {
+	@SubscribeEvent public void onServerStart(ServerAboutToStart event) {
 		itemBlacklist = Sets.newIdentityHashSet();
 		itemBlacklist.addAll(Config.current().itemBlacklist.asItems().get());
 	}
 	
-	private static final void onServerStop() {
+	@SubscribeEvent public void onServerStop(ServerStopping event) {
 		itemBlacklist = null;
 	}
 	

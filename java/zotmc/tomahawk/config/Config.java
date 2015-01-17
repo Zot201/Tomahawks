@@ -35,8 +35,6 @@ public class Config {
 	COMPS = "compatibilities",
 	DEBUG = "debug";
 
-	private static final boolean FREE_RETREIVAL_DEFAULT = Utils.MC_VERSION.isBelow("1.7.2");
-
 	@ApplyHot
 	public final Configurable<Boolean>
 	commonAxesThrowing = new ConfigurableBoolean(GENERAL, "commonAxesThrowing").set(true);
@@ -45,7 +43,7 @@ public class Config {
 	itemBlacklist = new ConfigurableItemIdSet(GENERAL, "axeBlacklist");
 	@ApplyHot @Core
 	public final Configurable<Boolean>
-	freeRetrieval = new ConfigurableBoolean(GENERAL, "freeRetrieval").set(FREE_RETREIVAL_DEFAULT),
+	freeRetrieval = new ConfigurableBoolean(GENERAL, "freeRetrieval").set(Utils.MC_VERSION.isBelow("1.7.2")),
 	reduceEntityRestitution = new ConfigurableBoolean(GENERAL, "reduceEntityRestitution").set(true);
 
 	@ApplyHot @Core

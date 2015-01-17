@@ -1,5 +1,6 @@
 package zotmc.tomahawk.data;
 
+import zotmc.tomahawk.util.Utils.Dependency;
 import zotmc.tomahawk.util.Utils.Modid;
 import zotmc.tomahawk.util.Utils.Requirements;
 
@@ -16,7 +17,7 @@ public class ModData {
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
 		MC_STRING = Loader.MC_VERSION,
-		VERSION = "1.5.0.3-" + MC_STRING,
+		VERSION = "1.5.1.0-" + MC_STRING,
 		DOMAIN = "tomahawk",
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
@@ -27,8 +28,7 @@ public class ModData {
 
 		API_MODID = MODID + ".api",
 
-		DEPENDENCIES = "required-after:" + CORE_MODID,
-		CORE_DEPENDENCIES = "required-after:" + Forge.MODID;
+		DEPENDENCIES = "required-after:" + CORE_MODID;
 	}
 
 	public static void init(ModMetadata metadata) {
@@ -43,6 +43,7 @@ public class ModData {
 	}
 
 
+	@Dependency
 	@Requirements({"1.7.10 = 10.13.0.1207", "1.7.2 = 10.12.2.1121", "1.6.4 = 9.11.1.965", "1.6.2 = 9.10.1.804"})
 	public static class Forge {
 		@Modid public static final String MODID = "Forge";

@@ -15,31 +15,31 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.reflect.Reflection;
 
-class OnlySilverHandler implements Function<DamageSource, Object> {
+class OnlySilverHandler<InUseWeapon> implements Function<DamageSource, InUseWeapon> {
 	
 	static void init() throws Throwable {
 		Class.forName(OnlySilver.ONLY_SILVER_REGISTRY)
 			.getMethod(OnlySilver.REGISTER_WEAPON_FUNCTION, String.class, Function.class)
-			.invoke(null, "thrown", new OnlySilverHandler());
+			.invoke(null, "thrown", new OnlySilverHandler<>());
 	}
 	
 	
-	private final Class<?> inUseWeapon;
+	private final Class<InUseWeapon> inUseWeaponType;
 	
+	@SuppressWarnings("unchecked")
 	private OnlySilverHandler() throws Throwable {
-		inUseWeapon = Class.forName(OnlySilver.IN_USE_WEAPON);
+		inUseWeaponType = (Class<InUseWeapon>) Class.forName(OnlySilver.IN_USE_WEAPON);
 	}
 	
-	@Override public Object apply(DamageSource input) {
+	@Override public InUseWeapon apply(DamageSource input) {
 		Entity projectile = input.getSourceOfDamage();
 		
-		return !(projectile instanceof EntityTomahawk) ? null
-				: newInUseWeapon((EntityTomahawk) projectile);
+		return !(projectile instanceof EntityTomahawk) ? null : newInUseWeapon((EntityTomahawk) projectile);
 	}
 	
-	private final Object newInUseWeapon(final EntityTomahawk hawk) {
+	private final InUseWeapon newInUseWeapon(final EntityTomahawk hawk) {
 		return Reflection.newProxy(
-				inUseWeapon,
+				inUseWeaponType,
 				new InvocationHandler() {
 					@Override public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 						switch(method.getName()) {
@@ -56,7 +56,7 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 							return OnlySilverHandler.this.toString(hawk);
 							
 						default:
-							throw new IllegalArgumentException();
+							throw new UnsupportedOperationException();
 						}
 					}
 				}
@@ -72,10 +72,8 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 	}
 	
 	private Void update(EntityTomahawk hawk, ItemStack item) {
-		if (item == null) {
-			hawk.setDead();
-			hawk.playSound("random.break", 0.8F, 0.8F + hawk.worldObj.rand.nextFloat() * 0.4F);
-		}
+		if (item == null)
+			hawk.onBroken();
 		
 		if (item != hawk.item.get())
 			hawk.item.set(item);
