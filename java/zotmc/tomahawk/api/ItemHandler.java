@@ -71,11 +71,10 @@ public interface ItemHandler {
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" }) // manually checked
 	static final Map<Class<? extends Annotation>, Method> ANNOTATION_MAP = Maps.toMap(
-			(Iterable) Utils.filter(Launchable.class.getDeclaredClasses(),
-					new Predicate<Class<?>>() { public boolean apply(Class<?> input) {
-						return input != Usage.class && Modifier.isPublic(input.getModifiers());
-					}}
-			),
+			(Iterable) Utils.asIterable(Launchable.class.getDeclaredClasses())
+				.filter(new Predicate<Class<?>>() { public boolean apply(Class<?> input) {
+					return input != Usage.class && Modifier.isPublic(input.getModifiers());
+				}}),
 			new Function<Class<? extends Annotation>, Method>() { public Method apply(Class<? extends Annotation> input) {
 				Usage u = input.getAnnotation(Usage.class);
 				Method m = Utils.getDeclaredMethod(ItemHandler.class,

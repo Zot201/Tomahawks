@@ -42,7 +42,6 @@ import net.minecraft.util.Vec3;
 
 import org.objectweb.asm.Type;
 
-import zotmc.tomahawk.data.ReflData.Bootstraps;
 import zotmc.tomahawk.data.ReflData.EnchantmentHelpers;
 import zotmc.tomahawk.util.geometry.CartesianVec3d;
 import zotmc.tomahawk.util.geometry.Vec3d;
@@ -50,6 +49,7 @@ import zotmc.tomahawk.util.init.SimpleVersion;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -63,15 +63,23 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
+import com.google.common.reflect.Invokable;
+import com.google.common.reflect.TypeToken;
 import com.mojang.authlib.GameProfile;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
+import cpw.mods.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 import cpw.mods.fml.common.registry.GameData;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.common.versioning.VersionParser;
 
 public class Utils {
+	
+	public static final SimpleVersion MC_VERSION = new SimpleVersion(
+			Fields.<String>get(null, findField(Loader.class, "MC_VERSION", "mccversion"))); // prevent inlining
+	
+	
 	
 	// version sensitive methods
 	
@@ -99,6 +107,16 @@ public class Utils {
 			} catch (Throwable e) {
 				throw Throwables.propagate(e);
 			}
+		}
+	}
+	
+	private static <T> Constructor<T> getConstructor(Class<T> clz, Class<?>... parameterTypes) {
+		try {
+			Constructor<T> ret = clz.getConstructor(parameterTypes);
+			ret.setAccessible(true);
+			return ret;
+		} catch (NoSuchMethodException e) {
+			throw new UnknownMethodException(e);
 		}
 	}
 	
@@ -132,9 +150,6 @@ public class Utils {
 	
 	
 	// minecraft and forge
-	
-	// prevent inlining
-	public static final SimpleVersion MC_VERSION = new SimpleVersion(Fields.<String>get(null, Bootstraps.MC_VERSION));
 	
 	public static class EntityLists {
 		@SuppressWarnings("unchecked")
@@ -252,7 +267,160 @@ public class Utils {
 	
 	
 	
+	// syntax
+	
+	@SuppressWarnings("unchecked")
+	public static <T> Optional<T> tryCast(Class<T> clz, Object obj) {
+		return clz.isInstance(obj) ? Optional.of((T) obj) : Optional.<T>absent();
+	}
+	
+	public static <T> FluentIterable<T> asIterable(T[] a) {
+		return FluentIterable.from(Arrays.asList(a));
+	}
+	
+	
+	
+	// functional idioms
+	
+	public static <E> List<E> asList(Function<Integer, E> elementFunction, int size) {
+		return new FunctionList<>(elementFunction, size);
+	}
+	private static class FunctionList<E> extends AbstractList<E> implements RandomAccess {
+		private final Function<Integer, E> elementFunction;
+		private final int size;
+		private FunctionList(Function<Integer, E> elementFunction, int size) {
+			this.elementFunction = elementFunction;
+			this.size = size;
+		}
+		@Override public E get(int index) {
+			if (index < 0 || index >= size)
+				throw new IndexOutOfBoundsException();
+			return elementFunction.apply(index);
+		}
+		@Override public int size() {
+			return size;
+		}
+	}
+	
+	public static <T> Predicate<T> notIn(Collection<? extends T> target) {
+		return Predicates.not(Predicates.in(target));
+	}
+	
+	public static <K1, K2, V> Iterable<Entry<K2, V>> transformKeys(Map<K1, V> map, final Function<? super K1, K2> function) {
+		return Iterables.transform(map.entrySet(), new Function<Entry<K1, V>, Entry<K2, V>>() {
+			@Override public Entry<K2, V> apply(Entry<K1, V> input) {
+				return Maps.immutableEntry(function.apply(input.getKey()), input.getValue());
+			}
+		});
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <F> Function<F, String> toStringFunction() {
+		return (Function<F, String>) Functions.toStringFunction();
+	}
+	
+	public static Runnable doNothing() {
+		return EmptyRunnable.INSTANCE;
+	}
+	private enum EmptyRunnable implements Runnable {
+		INSTANCE;
+		@Override public void run() { }
+	}
+	
+	public static Function<Class<?>, Type> asmTypeAdaptor() {
+		return AsmTypeAdaptor.INSTANCE;
+	}
+	private enum AsmTypeAdaptor implements Function<Class<?>, Type> {
+		INSTANCE;
+		@Override public Type apply(Class<?> input) {
+			return Type.getType(input);
+		}
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static <T> Function<Iterable<T>, Iterator<T>> iterableFunction() {
+		return (Function) IterableFunction.INSTANCE;
+	}
+	private enum IterableFunction implements Function<Iterable<?>, Iterator<?>> {
+		INSTANCE;
+		@Override public Iterator<?> apply(Iterable<?> input) {
+			return input.iterator();
+		}
+	}
+	
+	
+	
 	// reflections
+	
+	public static Class<?> findClass(String... names) {
+		for (String s : names)
+			try {
+				return Class.forName(s);
+			} catch (Throwable ignored) { }
+		
+		throw new UnknownClassException(Joiner.on(", ").join(names)); 
+	}
+	
+	public static Field findField(Class<?> clz, String... names) {
+		String owner = unmapTypeName(clz);
+		for (String s : names)
+			try {
+				Field f = clz.getDeclaredField(remapFieldName(owner, s));
+				f.setAccessible(true);
+				return f;
+			} catch (Throwable ignored) { }
+		
+		throw new UnknownFieldException(clz.getName() + ".[" + Joiner.on(", ").join(names) + "]");
+	}
+	
+	public static <T> MethodFinder<T> findMethod(Class<T> clz, String... names) {
+		return new MethodFinder<T>(clz, names);
+	}
+	public static class MethodFinder<T> {
+		private final Class<T> clz;
+		private final String[] names;
+		private MethodFinder(Class<T> clz, String[] names) {
+			this.clz = clz;
+			this.names = names;
+		}
+		
+		public Method withArgs(Class<?>... parameterTypes) {
+			String owner = unmapTypeName(clz);
+			for (String s : names)
+				try {
+					Method m = clz.getDeclaredMethod(remapMethodName(owner, s), parameterTypes);
+					m.setAccessible(true);
+					return m;
+				} catch (Throwable ignored) { }
+			
+			throw new UnknownMethodException(String.format(
+					"%s.[%s](%s)",
+					clz.getName(),
+					Joiner.on(", ").join(names),
+					Joiner.on(", ").join(Utils.asIterable(parameterTypes).transform(ClassNameFunction.INSTANCE))
+			));
+		}
+		public Invokable<T, Object> asInvokable(Class<?>... parameterTypes) {
+			return TypeToken.of(clz).method(withArgs(parameterTypes));
+		}
+	}
+	
+	private static String unmapTypeName(Class<?> clz) {
+		return FMLDeobfuscatingRemapper.INSTANCE.unmap(Type.getInternalName(clz));
+	}
+	private static String remapFieldName(String owner, String field) {
+		return FMLDeobfuscatingRemapper.INSTANCE.mapFieldName(owner, field, null);
+	}
+	private static String remapMethodName(String owner, String method) {
+		return FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(owner, method, null);
+	}
+	
+	private enum ClassNameFunction implements Function<Class<?>, String> {
+		INSTANCE;
+		@Override public String apply(Class<?> input) {
+			return input == null ? "null" : input.getName();
+		}
+	}
 	
 	public static Field getDeclaredField(Class<?> clz, String name) {
 		try {
@@ -278,56 +446,18 @@ public class Utils {
 		}
 	}
 	
-	private static <T> Constructor<T> getConstructor(Class<T> clz, Class<?>... parameterTypes) {
+	public static <T> T construct(Class<T> clz) {
 		try {
-			Constructor<T> ret = clz.getConstructor(parameterTypes);
-			ret.setAccessible(true);
-			return ret;
-		} catch (NoSuchMethodException e) {
-			throw new UnknownMethodException(e);
-		}
-	}
-	
-	public static <T> boolean invokeIfExists(T obj, Class<? super T> declaringClz, String methodName) {
-		Method m = null;
-		try {
-			m = declaringClz.getDeclaredMethod(methodName);
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
-		
-		if (m != null)
-			try {
-				m.setAccessible(true);
-				m.invoke(obj);
-			} catch (Throwable e) {
-				throw Throwables.propagate(e);
-			}
-		
-		return true;
-	}
-	
-	public static void invokeDeclared(Class<?> clz, String methodName) {
-		try {
-			Method m = clz.getDeclaredMethod(methodName);
-			m.setAccessible(true);
-			m.invoke(null);
+			Constructor<T> ctor = clz.getDeclaredConstructor();
+			ctor.setAccessible(true);
+			return ctor.newInstance();
 		} catch (Throwable e) {
 			throw Throwables.propagate(e);
 		}
 	}
 	
 	public static <T> Optional<T> constructIf(boolean condition, Class<T> clz) {
-		if (condition)
-			try {
-				Constructor<T> ctor = clz.getConstructor();
-				ctor.setAccessible(true);
-				return Optional.of(ctor.newInstance());
-			} catch (Throwable e) {
-				throw Throwables.propagate(e);
-			}
-		
-		return Optional.absent();
+		return condition ? Optional.of(construct(clz)) : Optional.<T>absent();
 	}
 	
 	public static Iterable<Class<?>> getTypes(final Class<?> clz) {
@@ -354,14 +484,47 @@ public class Utils {
 		});
 	}
 	
+	private static <T> Iterable<T> hierarchy(final T root, Function<? super T, ? extends Iterable<T>> subordinateFunction) {
+		final Function<? super T, Iterator<T>> func = Functions.compose(Utils.<T>iterableFunction(), subordinateFunction);
+		
+		return new Iterable<T>() { public Iterator<T> iterator() {
+			return new HierarchyIterator<>(Iterators.singletonIterator(root), func);
+		}};
+	}
+	private static class HierarchyIterator<T> extends AbstractIterator<T> {
+		final Queue<Iterator<T>> queue = Collections.asLifoQueue(Queues.<Iterator<T>>newArrayDeque());
+		final Function<? super T, Iterator<T>> function;
+		HierarchyIterator(Iterator<T> root, Function<? super T, Iterator<T>> function) {
+			queue.add(root);
+			this.function = function;
+		}
+		@Override protected T computeNext() {
+			while (true) {
+				Iterator<T> itr = queue.peek();
+				if (itr != null) {
+					if (itr.hasNext()) {
+						T ret = itr.next();
+						queue.add(function.apply(ret));
+						return ret;
+					}
+					else
+						queue.remove();
+				}
+				else
+					return endOfData();
+			}
+		}
+	}
+	
 	public static Method getPublic(Method method) {
-		for (Class<?> clz : getTypes(method.getDeclaringClass()))
-			if (Modifier.isPublic(clz.getModifiers()))
-				try {
-					Method m = clz.getDeclaredMethod(method.getName(), method.getParameterTypes());
-					if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()))
-						return m;
-				} catch (NoSuchMethodException ignored) { }
+		if (!Modifier.isStatic(method.getModifiers()))
+			for (Class<?> clz : getTypes(method.getDeclaringClass()))
+				if (Modifier.isPublic(clz.getModifiers()))
+					try {
+						Method m = clz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+						if (Modifier.isPublic(m.getModifiers()) && !Modifier.isStatic(m.getModifiers()))
+							return m;
+					} catch (NoSuchMethodException ignored) { }
 		
 		return null;
 	}
@@ -412,134 +575,15 @@ public class Utils {
 	
 	
 	
-	// functional idioms
-	
-	private static <T> Iterable<T> hierarchy(final T root, Function<? super T, ? extends Iterable<T>> subordinateFunction) {
-		final Function<? super T, Iterator<T>> func = Functions.compose(Utils.<T>iterableFunction(), subordinateFunction);
-		
-		return new Iterable<T>() { public Iterator<T> iterator() {
-			return new HierarchyIterator<>(Iterators.singletonIterator(root), func);
-		}};
-	}
-	private static class HierarchyIterator<T> extends AbstractIterator<T> {
-		final Queue<Iterator<T>> queue = Collections.asLifoQueue(Queues.<Iterator<T>>newArrayDeque());
-		final Function<? super T, Iterator<T>> function;
-		HierarchyIterator(Iterator<T> root, Function<? super T, Iterator<T>> function) {
-			queue.add(root);
-			this.function = function;
-		}
-		@Override protected T computeNext() {
-			while (true) {
-				Iterator<T> itr = queue.peek();
-				if (itr != null) {
-					if (itr.hasNext()) {
-						T ret = itr.next();
-						queue.add(function.apply(ret));
-						return ret;
-					}
-					else
-						queue.remove();
-				}
-				else
-					return endOfData();
-			}
-		}
-	}
-	
-	public static <E> List<E> asList(Function<Integer, E> elementFunction, int size) {
-		return new FunctionList<>(elementFunction, size);
-	}
-	private static class FunctionList<E> extends AbstractList<E> implements RandomAccess {
-		private final Function<Integer, E> elementFunction;
-		private final int size;
-		private FunctionList(Function<Integer, E> elementFunction, int size) {
-			this.elementFunction = elementFunction;
-			this.size = size;
-		}
-		@Override public E get(int index) {
-			if (index < 0 || index >= size)
-				throw new IndexOutOfBoundsException();
-			return elementFunction.apply(index);
-		}
-		@Override public int size() {
-			return size;
-		}
-	}
-	
-	public static <T> Predicate<T> notIn(Collection<? extends T> target) {
-		return Predicates.not(Predicates.in(target));
-	}
-	
-	public static <F, T> Iterable<T> transform(F[] a, Function<? super F, ? extends T> function) {
-		return Iterables.transform(Arrays.asList(a), function);
-	}
-	
-	public static <T> Iterable<T> filter(T[] a, Predicate<? super T> predicate) {
-		return Iterables.filter(Arrays.asList(a), predicate);
-	}
-	
-	public static <K1, K2, V> Iterable<Entry<K2, V>> transformKeys(Map<K1, V> map, final Function<? super K1, K2> function) {
-		return Iterables.transform(map.entrySet(), new Function<Entry<K1, V>, Entry<K2, V>>() {
-			@Override public Entry<K2, V> apply(Entry<K1, V> input) {
-				return Maps.immutableEntry(function.apply(input.getKey()), input.getValue());
-			}
-		});
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <F> Function<F, String> toStringFunction() {
-		return (Function<F, String>) Functions.toStringFunction();
-	}
-	
-	public static Runnable doNothing() {
-		return EmptyRunnable.INSTANCE;
-	}
-	private enum EmptyRunnable implements Runnable {
-		INSTANCE;
-		@Override public void run() { }
-	}
-	
-	public static Function<Class<?>, Type> asmTypeAdaptor() {
-		return AsmTypeAdaptor.INSTANCE;
-	}
-	private enum AsmTypeAdaptor implements Function<Class<?>, Type> {
-		INSTANCE;
-		@Override public Type apply(Class<?> input) {
-			return Type.getType(input);
-		}
-	}
-	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static <T> Function<Iterable<T>, Iterator<T>> iterableFunction() {
-		return (Function) IterableFunction.INSTANCE;
-	}
-	private enum IterableFunction implements Function<Iterable<?>, Iterator<?>> {
-		INSTANCE;
-		@Override public Iterator<?> apply(Iterable<?> input) {
-			return input.iterator();
-		}
-	}
-	
-	
-	
-	// syntax
-	
-	@SuppressWarnings("unchecked")
-	public static <T> Optional<T> tryCast(Class<T> clz, Object obj) {
-		return clz.isInstance(obj) ? Optional.of((T) obj) : Optional.<T>absent();
-	}
-	
-	public static <T> FluentIterable<T> asIterable(T[] a) {
-		return FluentIterable.from(Arrays.asList(a));
-	}
-	
-	
-	
 	// version validations
 	
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.FIELD)
 	public @interface Modid { }
+	
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE)
+	public @interface Dependency { }
 
 	/**
 	 * When applied to an outer class, this represents a map from building MC versions to the required MC versions.
@@ -555,7 +599,7 @@ public class Utils {
 		Set<ArtifactVersion> missing = Sets.newHashSet();
 		
 		ModContainer mc = Loader.instance().getMinecraftModContainer();
-		ArtifactVersion m0 = check(clz, "Minecraft", new SimpleVersion(mcString), mc.getProcessedVersion());
+		ArtifactVersion m0 = check(clz, "Minecraft", new SimpleVersion(mcString), mc);
 		if (m0 != null)
 			missing.add(m0);
 		
@@ -572,8 +616,8 @@ public class Utils {
 					modid = Fields.get(null, f);
 				}
 			
-			if (modid != null && Loader.isModLoaded(modid)) {
-				ArtifactVersion m = check(c, modid, MC_VERSION, mods.get(modid).getProcessedVersion());
+			if (modid != null) {
+				ArtifactVersion m = check(c, modid, MC_VERSION, mods.get(modid));
 				if (m != null)
 					missing.add(m);
 			}
@@ -582,22 +626,29 @@ public class Utils {
 		return missing;
 	}
 	
-	private static ArtifactVersion check(Class<?> c, String modid, SimpleVersion key, ArtifactVersion actual) {
-		Requirements requirements = c.getAnnotation(Requirements.class);
+	private static ArtifactVersion check(Class<?> c, String modid, SimpleVersion key, ModContainer mc) {
+		boolean isLoaded = Loader.isModLoaded(modid);
 		
-		if (requirements != null) {
-			for (String s : requirements.value()) {
-				List<String> entry = Splitter.on('=').trimResults().splitToList(s);
-				checkArgument(entry.size() == 2);
-				
-				if (key.isAtLeast(entry.get(0))) {
-					ArtifactVersion r = parse(modid, entry.get(1));
+		if (isLoaded || c.getAnnotation(Dependency.class) != null) {
+			Requirements requirements = c.getAnnotation(Requirements.class);
+			
+			if (requirements != null) {
+				for (String s : requirements.value()) {
+					List<String> entry = Splitter.on('=').trimResults().splitToList(s);
+					checkArgument(entry.size() == 2);
 					
-					if (!r.containsVersion(actual))
-						return r;
-					break;
+					if (key.isAtLeast(entry.get(0))) {
+						ArtifactVersion r = parse(modid, entry.get(1));
+						
+						if (!isLoaded || !r.containsVersion(mc.getProcessedVersion()))
+							return r;
+						break;
+					}
 				}
 			}
+			
+			if (!isLoaded)
+				return VersionParser.parseVersionReference(modid);
 		}
 		
 		return null;
@@ -608,6 +659,49 @@ public class Utils {
 		if (c != '[' && c != '(')
 			versionRange = "[" + versionRange + ",)";
 		return VersionParser.parseVersionReference(modid + "@" + versionRange);
+	}
+	
+	
+	
+	// exceptions
+	
+	public static class UnknownClassException extends RuntimeException {
+		public UnknownClassException() { }
+		public UnknownClassException(String message, Throwable cause) {
+			super(message, cause);
+		}
+		public UnknownClassException(String message) {
+			super(message);
+		}
+		public UnknownClassException(Throwable cause) {
+			super(cause);
+		}
+	}
+	
+	public static class UnknownFieldException extends RuntimeException {
+		public UnknownFieldException() { }
+		public UnknownFieldException(String message, Throwable cause) {
+			super(message, cause);
+		}
+		public UnknownFieldException(String message) {
+			super(message);
+		}
+		public UnknownFieldException(Throwable cause) {
+			super(cause);
+		}
+	}
+	
+	public static class UnknownMethodException extends RuntimeException {
+		public UnknownMethodException() { }
+		public UnknownMethodException(String message, Throwable cause) {
+			super(message, cause);
+		}
+		public UnknownMethodException(String message) {
+			super(message);
+		}
+		public UnknownMethodException(Throwable cause) {
+			super(cause);
+		}
 	}
 	
 }

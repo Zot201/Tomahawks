@@ -33,3 +33,5 @@ tomahawk.gui.config.tiCFryingPansThrowing=TiC Frying Pans Throwing
 tomahawk.gui.config.tiCHammersThrowing=TiC Hammers Throwing
 
 enchantment.tomahawk.replica=Replica
+
+entity.axetomahawk.core.tomahawk.name=Projectile

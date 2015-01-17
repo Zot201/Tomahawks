@@ -3,7 +3,6 @@ package zotmc.tomahawk.core;
 import static cpw.mods.fml.common.eventhandler.EventPriority.LOW;
 import static cpw.mods.fml.relauncher.Side.CLIENT;
 import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.INHERIT_GOLDEN_SWORD;
-import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_DEPENDENCIES;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_GUI_FACTORY;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_MODID;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.CORE_NAME;
@@ -72,34 +71,41 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerAboutToStartEvent;
 import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import cpw.mods.fml.common.eventhandler.Event;
+import cpw.mods.fml.common.eventhandler.EventBus;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
+import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(modid = CORE_MODID, name = CORE_NAME, version = VERSION, dependencies = CORE_DEPENDENCIES, guiFactory = CORE_GUI_FACTORY)
+@Mod(modid = CORE_MODID, name = CORE_NAME, version = VERSION, guiFactory = CORE_GUI_FACTORY)
 public class TomahawksCore {
 	
 	@Instance(CORE_MODID) public static TomahawksCore instance;
 	
 	public final Logger log = LogManager.getFormatterLogger(CORE_MODID);
-	
 	public final SimpleNetworkWrapper network = NetworkRegistry.INSTANCE.newSimpleChannel(CORE_MODID);
+	
+	private final EventBus eventBus = new EventBus();
 	
 	
 	@EventHandler public void onConstruct(FMLConstructionEvent event) {
 		Set<ArtifactVersion> missing = Utils.checkRequirements(ModData.class, MC_STRING);
-		
 		if (!missing.isEmpty())
 			throw new MissingModsException(missing);
+		
+		eventBus.register(Utils.construct(LoadingPluginTomahawk.Subscriber.class));
+		eventBus.register(Utils.construct(TomahawkAPI.class));
 	}
+	
 	
 	@SideOnly(CLIENT)
 	private void registerResolverFactory() {
 		MinecraftForge.EVENT_BUS.register(new ResolverFactory());
 	}
+	
 	@SideOnly(CLIENT)
 	public class ResolverFactory { @SubscribeEvent public void onGuiOpen(GuiOpenEvent event) {
 		if (event.gui instanceof GuiMainMenu)
@@ -116,12 +122,16 @@ public class TomahawksCore {
 		Utils.EntityLists.stringToClassMapping().put("axetomahawk.tomahawk", EntityTomahawk.class); // for backward compatibility
 		
 		int id = Config.current().replica.get();
-		if (id != -1 && (Enchantment.enchantmentsList[id] == null
-				|| !Utils.invokeIfExists(this, TomahawksCore.class, "registerResolverFactory"))) {
-			Reserve<Enchantment> replica = (Reserve<Enchantment>) TomahawkAPI.replica;
-			replica.set(new EnchReplica(id).setName(I18nData.NAME_REPLICA));
+		if (id != -1) {
+			if (Enchantment.enchantmentsList[id] != null && event.getSide() == Side.CLIENT)
+				registerResolverFactory();
+			else {
+				Reserve<Enchantment> replica = (Reserve<Enchantment>) TomahawkAPI.replica;
+				replica.set(new EnchReplica(id).setName(I18nData.NAME_REPLICA));
+			}
 		}
 	}
+	
 	
 	@SideOnly(CLIENT)
 	private void registerHandlers() {
@@ -134,7 +144,8 @@ public class TomahawksCore {
 	@EventHandler public void init(FMLInitializationEvent event) {
 		MinecraftForge.EVENT_BUS.register(this);
 		
-		Utils.invokeIfExists(this, TomahawksCore.class, "registerHandlers");
+		if (event.getSide() == Side.CLIENT)
+			registerHandlers();
 		
 		
 		if (Loader.isModLoaded(AdditionalEnchantments.MODID)) {
@@ -159,12 +170,18 @@ public class TomahawksCore {
 			}
 	}
 	
+	
+	public class PostInitialization extends Event { private PostInitialization() { }}
+	public class LoadComplete extends Event { private LoadComplete() { }}
+	public class ServerAboutToStart extends Event { private ServerAboutToStart() { }}
+	public class ServerStopping extends Event { private ServerStopping() { }}
+	
 	@EventHandler public void postInit(FMLPostInitializationEvent event) {
-		Utils.invokeDeclared(LoadingPluginTomahawk.class, "postInit");
+		eventBus.post(new PostInitialization());
 	}
 	
 	@EventHandler public void onAvailable(FMLLoadCompleteEvent event) {
-		Utils.invokeDeclared(TomahawkAPI.class, "onAvailable");
+		eventBus.post(new LoadComplete());
 		
 		try {
 			DispenserHandler.init();
@@ -181,12 +198,12 @@ public class TomahawksCore {
 		}
 	}
 	
-	@EventHandler public void onServerStart(FMLServerAboutToStartEvent event) {
-		Utils.invokeDeclared(TomahawkAPI.class, "onServerStart");
+	@EventHandler public void onServerStart(FMLServerAboutToStartEvent unused) {
+		eventBus.post(new ServerAboutToStart());
 	}
 	
-	@EventHandler public void onServerStop(FMLServerStoppingEvent event) {
-		Utils.invokeDeclared(TomahawkAPI.class, "onServerStop");
+	@EventHandler public void onServerStop(FMLServerStoppingEvent unused) {
+		eventBus.post(new ServerStopping());
 	}
 	
 	
@@ -268,7 +285,7 @@ public class TomahawksCore {
 	}
 	
 	@SubscribeEvent public void onAnvilUpdate(AnvilUpdateEvent event) {
-		//left and right are not null
+		// left and right are known not null
 		if (Config.current().goldenFusion.get()
 				&& event.right.getItem() == Items.golden_sword
 				&& TomahawkRegistry.getItemHandler(event.left).isEnchantable(event.left, INHERIT_GOLDEN_SWORD)) {

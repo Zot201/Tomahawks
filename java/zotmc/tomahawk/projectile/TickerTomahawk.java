@@ -15,7 +15,6 @@ import static zotmc.tomahawk.util.geometry.SideHit.UP;
 import static zotmc.tomahawk.util.geometry.SideHit.WEST;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
@@ -170,7 +169,7 @@ public class TickerTomahawk implements Runnable {
 				
 				if (hawk.worldObj.isRemote && hawk.item.get().isItemEnchanted())
 					for (int i = 0; i < 3; i++)
-						if (ThreadLocalRandom.current().nextInt(4) == 0) {
+						if (hawk.rand().nextInt(4) == 0) {
 							double f = i / 3.0;
 							hawk.worldObj.spawnParticle("magicCrit",
 									pos.x() + motion.x() * f, 

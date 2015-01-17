@@ -33,3 +33,5 @@ tomahawk.gui.config.tiCFryingPansThrowing=TiC フライパン投擲
 tomahawk.gui.config.tiCHammersThrowing=TiC ハンマー投擲
 
 enchantment.tomahawk.replica=レプリカ
+
+entity.axetomahawk.core.tomahawk.name=投擲物

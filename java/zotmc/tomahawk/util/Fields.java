@@ -102,10 +102,10 @@ public class Fields {
 	// prop
 
 	public static FieldAccess<?> referTo(Class<?> declaringClz, String... fieldNames) {
-		return referTo(null, Refls.findField(declaringClz, fieldNames));
+		return referTo(null, Utils.findField(declaringClz, fieldNames));
 	}
 	public static <T> FieldAccess<?> referTo(T obj, Class<? super T> declaringClz, String... fieldNames) {
-		return referTo(obj, Refls.findField(declaringClz, fieldNames));
+		return referTo(obj, Utils.findField(declaringClz, fieldNames));
 	}
 	public static FieldAccess<?> referTo(final Object obj, Field field) {
 		return new FieldAccess<Object>(field) {
@@ -140,7 +140,7 @@ public class Fields {
 		}
 		
 		public FieldAccess<?> downTo(Class<?> declaringClz, String... fieldNames) {
-			return downTo(Refls.findField(declaringClz, fieldNames));
+			return downTo(Utils.findField(declaringClz, fieldNames));
 		}
 		public FieldAccess<?> downTo(Field field) {
 			return new FieldAccess<T>(field) {
