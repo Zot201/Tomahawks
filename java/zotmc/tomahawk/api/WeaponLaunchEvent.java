@@ -8,6 +8,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import zotmc.tomahawk.api.ItemHandler.PlaybackType;
+import zotmc.tomahawk.core.PacketSwingItem;
+import zotmc.tomahawk.core.TomahawksCore;
 import cpw.mods.fml.common.eventhandler.Cancelable;
 
 @Cancelable
@@ -34,7 +36,8 @@ public class WeaponLaunchEvent extends LivingEvent {
 			if (stopSprinting)
 				entityLiving.setSprinting(false);
 			if (swingItem)
-				entityLiving.swingItem();
+				TomahawksCore.instance.network.sendToAllTrackingPlayers(
+						new PacketSwingItem(entityLiving.getEntityId()), entityLiving);
 			if (entityLiving instanceof EntityPlayer)
 				((EntityPlayer) entityLiving).addExhaustion(exhaustion);
 			

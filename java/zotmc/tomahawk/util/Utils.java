@@ -278,6 +278,15 @@ public class Utils {
 		return FluentIterable.from(Arrays.asList(a));
 	}
 	
+	public static <T> Predicate<T> or(final Iterable<Predicate<T>> components) {
+		return new Predicate<T>() { public boolean apply(T input) {
+			for (Predicate<T> p : components)
+				if (p.apply(input))
+					return true;
+			return false;
+		}};
+	}
+	
 	
 	
 	// functional idioms

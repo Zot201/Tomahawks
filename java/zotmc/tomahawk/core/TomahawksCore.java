@@ -35,10 +35,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import zotmc.tomahawk.api.DamageTypeAdaptor;
-import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
 import zotmc.tomahawk.api.TomahawkRegistry;
-import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.config.GuiConfigScreenResolver;
 import zotmc.tomahawk.data.I18nData;
@@ -53,10 +51,9 @@ import zotmc.tomahawk.projectile.RenderTomahawk;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
 import zotmc.tomahawk.util.DummyPlayer;
 import zotmc.tomahawk.util.DummyWorld;
+import zotmc.tomahawk.util.ExtendedNetworkWrapper;
 import zotmc.tomahawk.util.Reserve;
 import zotmc.tomahawk.util.Utils;
-import zotmc.tomahawk.util.geometry.CartesianVec3f;
-import zotmc.tomahawk.util.geometry.Vec3f;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.MissingModsException;
@@ -86,7 +83,7 @@ public class TomahawksCore {
 	@Instance(CORE_MODID) public static TomahawksCore instance;
 	
 	public final Logger log = LogManager.getFormatterLogger(CORE_MODID);
-	public final SimpleNetworkWrapper network = NetworkRegistry.INSTANCE.newSimpleChannel(CORE_MODID);
+	public final ExtendedNetworkWrapper network = new ExtendedNetworkWrapper(CORE_MODID);
 	
 	private final EventBus eventBus = new EventBus();
 	
@@ -96,8 +93,10 @@ public class TomahawksCore {
 		if (!missing.isEmpty())
 			throw new MissingModsException(missing);
 		
-		eventBus.register(Utils.construct(LoadingPluginTomahawk.Subscriber.class));
+		eventBus.register(Utils.construct(LoadingPluginTomahawk.Validating.class));
 		eventBus.register(Utils.construct(TomahawkAPI.class));
+		
+		network.registerMessage(PacketSwingItem.Handler.class, PacketSwingItem.class, 1, Side.CLIENT);
 	}
 	
 	
@@ -209,60 +208,11 @@ public class TomahawksCore {
 	
 	
 	// Forge Events
-
-	final Vec3f hit = new CartesianVec3f();
 	
 	@SubscribeEvent(priority = LOW)
 	public void onPlayerInteract(PlayerInteractEvent event) {
-		boolean rightClickBlock = event.action == Action.RIGHT_CLICK_BLOCK;
-		
-		if (rightClickBlock || event.action == Action.RIGHT_CLICK_AIR) {
-			EntityPlayer player = event.entityPlayer;
-			PlayerTracker tracker = PlayerTracker.get(player);
-			
-			if (tracker.getAfterInteract() != 0) {
-				ItemStack item = player.getHeldItem();
-				
-				if (item != null && item.stackSize > 0 && TomahawkAPI.isLaunchable(item)) {
-					if (event.world.isRemote)
-						TomahawkImpls.setHit();
-					
-					if (rightClickBlock && TomahawkImpls.activateBlock(event, player, item, hit)) {
-		        		event.useBlock = Event.Result.DENY;
-		        		return;
-					}
-					
-					WeaponLaunchEvent launchEvent = new WeaponLaunchEvent(
-							player, Utils.itemStack(item, 1), TomahawkRegistry.getItemHandler(item));
-					
-					boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
-					boolean creative = player.capabilities.isCreativeMode;
-					
-					if (replica) {
-						launchEvent.setPickUpType(PickUpType.ENCH);
-						launchEvent.isFragile = true;
-					}
-					else if (creative)
-						launchEvent.setPickUpType(PickUpType.CREATIVE);
-					
-					if (launchEvent.run()) {
-						if (!creative) {
-							if (replica)
-								item.damageItem(2, player);
-							else
-								item.stackSize--;
-							
-							if (item.stackSize == 0)
-								player.setCurrentItemOrArmor(0, null);
-						}
-
-						event.useItem = Event.Result.DENY;
-		        		event.useBlock = Event.Result.DENY;
-		        		tracker.onInteract();
-					}
-				}
-			}
-		}
+		if (!event.world.isRemote && event.action == Action.RIGHT_CLICK_AIR && TomahawkHooks.isLaunchable(event))
+			TomahawkHooks.activateTomahawk(event);
 	}
 	
 	@SubscribeEvent public void onLivingHurt(LivingHurtEvent event) {

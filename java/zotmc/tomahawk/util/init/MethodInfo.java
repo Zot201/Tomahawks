@@ -1,4 +1,4 @@
-package zotmc.tomahawk.util;
+package zotmc.tomahawk.util.init;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;

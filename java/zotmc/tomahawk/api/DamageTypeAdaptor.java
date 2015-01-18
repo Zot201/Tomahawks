@@ -14,6 +14,7 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import zotmc.tomahawk.data.ReflData;
 import zotmc.tomahawk.projectile.DamageSourceTomahawk;
 import zotmc.tomahawk.util.Fields;
+import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -48,7 +49,7 @@ public class DamageTypeAdaptor extends EventBus {
 	private final int parentId = Fields.get(MinecraftForge.EVENT_BUS, ReflData.BUS_ID);
 	private final Set<ModContainer> modContainers = Sets.newIdentityHashSet();
 	private final Set<Predicate<CharSequence>> namePatterns = Sets.newHashSet();
-	private final Predicate<CharSequence> namePredicate = Predicates.or(namePatterns);
+	private final Predicate<CharSequence> namePredicate = Utils.or(namePatterns);
 	
 	private DamageTypeAdaptor() { }
 	
@@ -63,9 +64,6 @@ public class DamageTypeAdaptor extends EventBus {
 	}
 	public void registerDirectly(Object object) {
 		super.register(object);
-	}
-	@Override public void unregister(Object object) {
-		super.unregister(object);
 	}
 	
 	public void delegateByModid(String modid) {

@@ -18,8 +18,8 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 import zotmc.tomahawk.util.Klas;
 import zotmc.tomahawk.util.KlastWriter;
-import zotmc.tomahawk.util.MethodInfo;
 import zotmc.tomahawk.util.Utils;
+import zotmc.tomahawk.util.init.MethodInfo;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;

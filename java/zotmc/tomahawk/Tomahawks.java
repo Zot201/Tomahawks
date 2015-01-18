@@ -32,6 +32,7 @@ import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.data.ModData;
+import zotmc.tomahawk.data.ModData.MekanismTools;
 import zotmc.tomahawk.data.ModData.TConstruct;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import cpw.mods.fml.common.Loader;
@@ -134,15 +135,15 @@ public class Tomahawks {
 				log.catching(e);
 			}
 
-		if (Loader.isModLoaded(ModData.Mekanism.MODID))
+		if (Loader.isModLoaded(MekanismTools.MODID))
 			try {
-				TomahawkRegistry.registerItemHandler(Class.forName(ModData.Mekanism.AXE), new Object() {
+				TomahawkRegistry.registerItemHandler(Class.forName(MekanismTools.AXE), new Object() {
 					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
 					@ConfigState public boolean isEnabled() { return Config.current().mekAxesThrowing.get(); }
 				});
 
-				TomahawkRegistry.registerItemHandler(Class.forName(ModData.Mekanism.PAXEL), new Object() {
-					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
+				TomahawkRegistry.registerItemHandler(Class.forName(MekanismTools.PAXEL), new Object() {
+					@Category public WeaponCategory category() { return WeaponCategory.PAXEL; }
 					@ConfigState public boolean isEnabled() { return Config.current().mekPaxelsThrowing.get(); }
 				});
 			} catch (Throwable e) {

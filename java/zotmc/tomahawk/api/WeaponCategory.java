@@ -40,6 +40,14 @@ public enum WeaponCategory implements ItemHandler {
 		@Override public Entity createDispenserProjectile(WeaponDispenseEvent event) {
 			return new EntityTomahawk(event);
 		}
+	},
+	PAXEL { //TODO
+		@Override public Entity createProjectile(WeaponLaunchEvent event) {
+			return new EntityTomahawk(event);
+		}
+		@Override public Entity createDispenserProjectile(WeaponDispenseEvent event) {
+			return new EntityTomahawk(event);
+		}
 	};
 	
 	

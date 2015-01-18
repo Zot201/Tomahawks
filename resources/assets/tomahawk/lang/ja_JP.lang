@@ -31,6 +31,8 @@ tomahawk.gui.config.tiCHatchetsThrowing=TiC 斧投擲
 tomahawk.gui.config.tiCLumberAxesThrowing=TiC まさかり投擲
 tomahawk.gui.config.tiCFryingPansThrowing=TiC フライパン投擲
 tomahawk.gui.config.tiCHammersThrowing=TiC ハンマー投擲
+tomahawk.gui.config.mekAxesThrowing=Mekanism 斧投擲
+tomahawk.gui.config.mekPaxelsThrowing=Mekanism　パクセル投擲
 
 enchantment.tomahawk.replica=レプリカ
 

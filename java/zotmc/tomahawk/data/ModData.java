@@ -17,7 +17,7 @@ public class ModData {
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
 		MC_STRING = Loader.MC_VERSION,
-		VERSION = "1.5.1.0-" + MC_STRING,
+		VERSION = "1.5.2.0-" + MC_STRING,
 		DOMAIN = "tomahawk",
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
@@ -81,9 +81,9 @@ public class ModData {
 		FRYPAN_HIT = "tinker:frypan_hit";
 	}
 
-	@Requirements("1.7.10 = 7.1")
-	public static class Mekanism {
-		@Modid public static final String MODID = "Mekanism";
+	@Requirements({"1.7.10 = 7.1", "1.6.4 = 6.0.5"})
+	public static class MekanismTools {
+		@Modid public static final String MODID = "MekanismTools";
 		public static final String
 		AXE = "mekanism.tools.item.ItemMekanismAxe",
 		PAXEL = "mekanism.tools.item.ItemMekanismPaxel";

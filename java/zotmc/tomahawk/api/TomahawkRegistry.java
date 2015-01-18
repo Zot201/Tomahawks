@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static zotmc.tomahawk.core.LogTomahawk.api4j;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -14,6 +15,9 @@ import java.util.Map.Entry;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.apache.logging.log4j.Logger;
+
 import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.Usage;
 import zotmc.tomahawk.core.TomahawksCore;
@@ -98,8 +102,13 @@ public class TomahawkRegistry {
 					try {
 						launchable = c.getAnnotation(Launchable.class);
 					} catch (Throwable e) {
-						TomahawksCore.instance.log.error("Failed to get annotation for %s", c);
-						TomahawksCore.instance.log.catching(e);
+						Logger log = TomahawksCore.instance.log;
+						log.error("Failed to get annotation for %s", c);
+						
+						if (e instanceof AnnotationFormatError)
+							log.error("Encountered AnnotationFormatError. Stack trace is discarded.");
+						else
+							log.catching(e);
 					}
 					
 					if (launchable != null) {
@@ -221,10 +230,10 @@ public class TomahawkRegistry {
 			checkArgument(parameterTypes[i].isAssignableFrom(requiredDesc[i + 1]),
 					"Argument type incompatible, %s", parameterTypes[i]);
 		
-		Class<?>[] exceptionTypes = target.getExceptionTypes();
+		/*Class<?>[] exceptionTypes = target.getExceptionTypes();
 		for (Class<?> c : exceptionTypes)
 			checkArgument(!RuntimeException.class.isAssignableFrom(c) && !Error.class.isAssignableFrom(c),
-					"Checked exception / error declaration is not allowed, %s", target);
+					"Checked exception / error declaration is not allowed, %s", target);*/
 		
 		return target;
 	}
