@@ -3,7 +3,7 @@ package zotmc.tomahawk.config;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.Configuration;
 import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
@@ -71,11 +71,11 @@ public abstract class ConfigurableStringList<T extends Iterable<U>, U> extends C
 	}
 	
 	@Override void readFromNBT(NBTTagCompound tags) {
-		NBTTagList list = tags.getTagList("value", 8);
+		NBTTagList list = tags.getTagList("value");
 		
 		String[] a = new String[list.tagCount()];
 		for (int i = 0; i < list.tagCount(); i++)
-			a[i] = list.getStringTagAt(i);
+			a[i] = ((NBTTagString) list.tagAt(i)).data;
 		
 		setIterable(Utils.asIterable(a).transform(valueOfFunction()));
 	}

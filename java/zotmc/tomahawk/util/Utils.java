@@ -25,9 +25,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.RandomAccess;
 import java.util.Set;
-import java.util.UUID;
 
-import net.minecraft.block.Block;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -58,16 +56,15 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
-import com.mojang.authlib.GameProfile;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
-import cpw.mods.fml.common.registry.GameData;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.common.versioning.VersionParser;
 
@@ -75,42 +72,15 @@ public class Utils {
 	
 	// version sensitive methods
 	
-	public static GameProfile newGameProfile(UUID id, String name) {
-		return GameProfileFactory.INSTANCE.newGameProfile(id, name);
-	}
-	private enum GameProfileFactory {
-		INSTANCE;
-		private final boolean useUUID;
-		private final Constructor<GameProfile> constructor;
-		private GameProfileFactory() {
-			if (MC_VERSION.isAtLeast("1.7.10")) {
-				constructor = getConstructor(GameProfile.class, UUID.class, String.class);
-				useUUID = true;
-			}
-			else {
-				constructor = getConstructor(GameProfile.class, String.class, String.class);
-				useUUID = false;
-			}
-		}
-		public GameProfile newGameProfile(UUID id, String name) {
-			try {
-				return useUUID ? constructor.newInstance(id, name)
-						: constructor.newInstance(id == null ? "" : id.toString(), name);
-			} catch (Throwable e) {
-				throw Throwables.propagate(e);
-			}
-		}
-	}
-	
 	public static float getEnchantmentModifierLiving(ItemStack item, EntityLivingBase victim) {
-		if (!modifierLivings.isPresent())
+		/*if (!modifierLivings.isPresent())
 			return EnchantmentHelper.func_152377_a(item, victim.getCreatureAttribute());
-		else {
+		else {*/
 			modifierLivings.get().result.set(0.0F);
 			modifierLivings.get().victim.set(victim);
 			applyEnchantmentModifier(modifierLivings.get().instance, item);
 			return modifierLivings.get().result.get();
-		}
+		/*}*/
 	}
 	
 	public static void applyEnchantmentDamageIterator(EntityLivingBase user, ItemStack item, Entity victim) {
@@ -150,14 +120,10 @@ public class Utils {
 		return ret;
 	}
 	
-	@SuppressWarnings("unchecked")
+	private static final Iterable<Item> ITEM_LIST =
+			Iterables.filter(Arrays.asList(Item.itemsList), Predicates.notNull());
 	public static Iterable<Item> itemList() {
-		return GameData.getItemRegistry();
-	}
-	
-	private static final Splitter COLON = Splitter.on(':').limit(2);
-	public static String getModid(Item item) {
-		return COLON.split(GameData.getItemRegistry().getNameForObject(item)).iterator().next();
+		return ITEM_LIST;
 	}
 	
 	public static Supplier<String> localize(String unlocalized) {
@@ -168,7 +134,7 @@ public class Utils {
 		
 		return new Supplier<String>() {
 			@Override public String get() {
-				return I18n.format(unlocalized, copy);
+				return I18n.getStringParams(unlocalized, copy);
 			}
 			
 			@Override public String toString() {
@@ -184,14 +150,6 @@ public class Utils {
 	@SuppressWarnings("unchecked")
 	public static Map<Integer, Integer> getEnchs(ItemStack item) {
 		return EnchantmentHelper.getEnchantments(item);
-	}
-	
-	public static Block getBlock(String name) {
-		return GameData.getBlockRegistry().getObject(name);
-	}
-	
-	public static String getNameForBlock(Block block) {
-		return GameData.getBlockRegistry().getNameForObject(block);
 	}
 	
 	
@@ -418,7 +376,7 @@ public class Utils {
 		final Function<? super T, Iterator<T>> func = Functions.compose(Utils.<T>iterableFunction(), subordinateFunction);
 		
 		return new Iterable<T>() { public Iterator<T> iterator() {
-			return new HierarchyIterator<>(Iterators.singletonIterator(root), func);
+			return new HierarchyIterator<T>(Iterators.singletonIterator(root), func);
 		}};
 	}
 	private static class HierarchyIterator<T> extends AbstractIterator<T> {
@@ -447,7 +405,7 @@ public class Utils {
 	}
 	
 	public static <E> List<E> asList(Function<Integer, E> elementFunction, int size) {
-		return new FunctionList<>(elementFunction, size);
+		return new FunctionList<E>(elementFunction, size);
 	}
 	private static class FunctionList<E> extends AbstractList<E> implements RandomAccess {
 		private final Function<Integer, E> elementFunction;
@@ -587,7 +545,7 @@ public class Utils {
 		
 		if (requirements != null) {
 			for (String s : requirements.value()) {
-				List<String> entry = Splitter.on('=').trimResults().splitToList(s);
+				List<String> entry = ImmutableList.copyOf(Splitter.on('=').trimResults().split(s));
 				checkArgument(entry.size() == 2);
 				
 				if (key.isAtLeast(entry.get(0))) {

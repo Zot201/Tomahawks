@@ -31,7 +31,7 @@ public abstract class AbsCylindricalVec3d extends Vec3d {
 		return ((a & 0x1FFFF) == 0x8000 ? a : 0x8000 + a) >>> 16;
 	}
 	private static int upper31(int a) {
-		return ((a & 0b11) == 0b1 ? a : 0b1 + a) >>> 1; 
+		return ((a & 3) == 1 ? a : 1 + a) >>> 1; 
 	}
 	
 	static float sinInt(int a) {

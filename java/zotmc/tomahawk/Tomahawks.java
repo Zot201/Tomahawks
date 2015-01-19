@@ -1,22 +1,18 @@
 package zotmc.tomahawk;
 
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.DEPENDENCIES;
-import static zotmc.tomahawk.data.ModData.AxeTomahawk.GUI_FACTORY;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.MODID;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.NAME;
 import static zotmc.tomahawk.data.ModData.AxeTomahawk.VERSION;
 
 import java.util.Random;
+import java.util.logging.Logger;
 
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import zotmc.tomahawk.api.ItemHandler.EnchantmentAction;
 import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import zotmc.tomahawk.api.Launchable.Category;
@@ -39,12 +35,14 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.registry.EntityRegistry;
 
-@Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES, guiFactory = GUI_FACTORY)
+@NetworkMod(clientSideRequired=true, serverSideRequired=false)
+@Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES)
 public class Tomahawks {
 	
-	private final Logger log = LogManager.getFormatterLogger(MODID);
+	private final Logger log = Logger.getLogger(MODID);
 	
 	@EventHandler public void preInit(FMLPreInitializationEvent event) {
 		ModData.init(event.getModMetadata());
@@ -109,7 +107,7 @@ public class Tomahawks {
 				});*/
 				
 				final Random rand = new Random();
-				final SoundType hitSound = new SoundType(TConstruct.FRYPAN_HIT, 1, 1) {
+				final StepSound hitSound = new StepSound(TConstruct.FRYPAN_HIT, 1, 1) {
 					@Override public float getPitch() {
 						return (rand.nextFloat() - rand.nextFloat()) * 0.2F + 1.0F;
 					}
@@ -121,7 +119,7 @@ public class Tomahawks {
 					@ConfigState public boolean isEnabled() {
 						return Config.current().tiCFryingPansThrowing.get();
 					}
-					@Sound public SoundType getSound(ItemStack item, PlaybackType type) {
+					@Sound public StepSound getSound(ItemStack item, PlaybackType type) {
 						return type == PlaybackType.HIT_BLOCK || type == PlaybackType.HIT_ENTITY ?
 								hitSound : category().getSound(item, type);
 					}
@@ -131,7 +129,8 @@ public class Tomahawks {
 				});
 				
 			} catch (Throwable e) {
-				log.catching(e);
+				log.severe("catching");
+				e.printStackTrace();
 			}
 	}
 	

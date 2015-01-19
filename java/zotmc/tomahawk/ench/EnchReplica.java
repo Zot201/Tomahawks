@@ -4,13 +4,14 @@ import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.REPLICA;
 import static zotmc.tomahawk.api.ItemHandler.EnchantmentAction.REPLICA_ON_BOOK;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnumEnchantmentType;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.api.TomahawkRegistry;
 
 public class EnchReplica extends Enchantment {
 
 	public EnchReplica(int id) {
-		super(id, 1, EnumEnchantmentType.breakable);
+		super(id, 1, EnumEnchantmentType.all);
 	}
 	
 	@Override public int getMaxEnchantability(int lvl) {
@@ -25,12 +26,17 @@ public class EnchReplica extends Enchantment {
 		return 1;
 	}
 	
+	private boolean isBreakable(ItemStack item) {
+		Item i = item.getItem();
+		return i != null && i.isDamageable();
+	}
+	
 	@Override public boolean canApply(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA);
+		return isBreakable(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA);
 	}
 	
 	@Override public boolean canApplyAtEnchantingTable(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA_ON_BOOK);
+		return isBreakable(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA_ON_BOOK);
 	}
 
 }

@@ -2,7 +2,7 @@ package zotmc.tomahawk.api;
 
 import java.util.Random;
 
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
@@ -44,12 +44,12 @@ public enum WeaponCategory implements ItemHandler {
 	
 	
 	private static final Random rand = new Random();
-	private static final SoundType inAirSound = new SoundType(AxeTomahawk.DOMAIN + ":random.tomahawk", 1, 1) {
+	private static final StepSound inAirSound = new StepSound(AxeTomahawk.DOMAIN + ":random.tomahawk", 1, 1) {
 		@Override public float getPitch() {
 			return 1 / (rand.nextFloat() * 0.4F + 1.2F) + 0.5F;
 		}
 	};
-	private static final SoundType hitSound = new SoundType(AxeTomahawk.DOMAIN + ":random.tomahawk_hit", 1, 1) {
+	private static final StepSound hitSound = new StepSound(AxeTomahawk.DOMAIN + ":random.tomahawk_hit", 1, 1) {
 		@Override public float getPitch() {
 			return 1.2F / (rand.nextFloat() * 0.2F + 0.9F) - 0.5F;
 		}
@@ -73,7 +73,7 @@ public enum WeaponCategory implements ItemHandler {
 	@Override public float getInitialSpeed(ItemStack item) {
 		return 2.11F;
 	}
-	@Override public SoundType getSound(ItemStack item, PlaybackType type) {
+	@Override public StepSound getSound(ItemStack item, PlaybackType type) {
 		switch (type) {
 		case LAUNCH:
 		case IN_AIR:

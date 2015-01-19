@@ -2,6 +2,7 @@ package zotmc.tomahawk.core;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -13,6 +14,7 @@ import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.reflect.Reflection;
 
 class OnlySilverHandler implements Function<DamageSource, Object> {
@@ -37,22 +39,24 @@ class OnlySilverHandler implements Function<DamageSource, Object> {
 				: newInUseWeapon((EntityTomahawk) projectile);
 	}
 	
+	private final List<String> switchMap = ImmutableList.of("getUser", "getItem", "update", "toString");
+	
 	private final Object newInUseWeapon(final EntityTomahawk hawk) {
 		return Reflection.newProxy(
 				inUseWeapon,
 				new InvocationHandler() {
 					@Override public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-						switch(method.getName()) {
-						case "getUser":
+						switch(switchMap.indexOf(method.getName())) {
+						case 0:
 							return getUser(hawk);
 							
-						case "getItem":
+						case 1:
 							return getItem(hawk);
 							
-						case "update":
+						case 2:
 							return update(hawk, (ItemStack) args[0]);
 							
-						case "toString":
+						case 3:
 							return OnlySilverHandler.this.toString(hawk);
 							
 						default:

@@ -8,11 +8,11 @@ import net.minecraft.dispenser.BehaviorProjectileDispense;
 import net.minecraft.dispenser.IBehaviorDispenseItem;
 import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.dispenser.IPosition;
+import net.minecraft.dispenser.IRegistry;
+import net.minecraft.dispenser.RegistryDefaulted;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IRegistry;
-import net.minecraft.util.RegistryDefaulted;
 import net.minecraft.world.World;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
@@ -36,8 +36,6 @@ class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 					.ofType(new TypeToken<Map<Item, IBehaviorDispenseItem>>() { });
 			
 			registryObjects.set(new DispenserHandler(registryObjects.get()));
-			
-			LogTomahawk.api4j().debug("Handled dispense behavior by wrapping %s", ReflData.REGISTRY_OBJECTS);
 		}
 		else {
 			Prop<IRegistry> dispenseBehaviorRegistry = Fields
@@ -57,8 +55,6 @@ class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 					return ret != null ? ret : handler.fallback(key);
 				}
 			});
-			
-			LogTomahawk.api4j().debug("Handled dispense behavior by wrapping %s", ReflData.DISPENSE_BEHAVIOR_REGISTRY);
 		}
 	}
 	
@@ -87,8 +83,8 @@ class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 			if (item != null && item.stackSize > 0 && TomahawkAPI.isLaunchable(item)) {
 				WeaponDispenseEvent event = new WeaponDispenseEvent(
 						blockSrc,
-						BlockDispenser.func_149939_a(blockSrc),
-						BlockDispenser.func_149937_b(blockSrc.getBlockMetadata()),
+						BlockDispenser.getIPositionFromBlockSource(blockSrc),
+						BlockDispenser.getFacing(blockSrc.getBlockMetadata()),
 						Utils.itemStack(item, 1),
 						TomahawkRegistry.getItemHandler(item)
 				);

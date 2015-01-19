@@ -1,6 +1,6 @@
 package zotmc.tomahawk.api;
 
-import static cpw.mods.fml.common.eventhandler.EventPriority.HIGHEST;
+import static net.minecraftforge.event.EventPriority.HIGHEST;
 
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -8,6 +8,12 @@ import java.util.Set;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.ASMEventHandler;
+import net.minecraftforge.event.Cancelable;
+import net.minecraftforge.event.Event;
+import net.minecraftforge.event.EventBus;
+import net.minecraftforge.event.ForgeSubscribe;
+import net.minecraftforge.event.IEventListener;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -22,12 +28,6 @@ import com.google.common.collect.Sets;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModContainer;
-import cpw.mods.fml.common.eventhandler.ASMEventHandler;
-import cpw.mods.fml.common.eventhandler.Cancelable;
-import cpw.mods.fml.common.eventhandler.Event;
-import cpw.mods.fml.common.eventhandler.EventBus;
-import cpw.mods.fml.common.eventhandler.IEventListener;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * An {@link EventBus} that adapt {@link DamageSource#damageType} from {@code "thrown"} to {@code "player"}
@@ -139,7 +139,7 @@ public class DamageTypeAdaptor extends EventBus {
 		return event.isCancelable() && event.isCanceled();
 	}
 	
-	@SubscribeEvent(priority = HIGHEST)
+	@ForgeSubscribe(priority = HIGHEST)
 	public void onLivingAttack(LivingAttackEvent original) {
 		if (original.entityLiving.worldObj instanceof WorldServer
 				&& original.source instanceof DamageSourceTomahawk) {
@@ -155,7 +155,7 @@ public class DamageTypeAdaptor extends EventBus {
 		}
 	}
 	
-	@SubscribeEvent(priority = HIGHEST)
+	@ForgeSubscribe(priority = HIGHEST)
 	public void onLivingHurt(LivingHurtEvent original) {
 		if (original.entityLiving.worldObj instanceof WorldServer
 				&& original.source instanceof DamageSourceTomahawk) {
@@ -173,7 +173,7 @@ public class DamageTypeAdaptor extends EventBus {
 		}
 	}
 	
-	@SubscribeEvent(priority = HIGHEST)
+	@ForgeSubscribe(priority = HIGHEST)
 	public void onLivingDrops(LivingDropsEvent original) {
 		if (original.entityLiving.worldObj instanceof WorldServer
 				&& original.source instanceof DamageSourceTomahawk) {

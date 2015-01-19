@@ -5,7 +5,6 @@ import zotmc.tomahawk.util.Utils.Requirements;
 
 import com.google.common.collect.Lists;
 
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModMetadata;
 
 @Requirements({"1.7 = 1.7", "1.6 = [1.6, 1.7)"})
@@ -15,7 +14,7 @@ public class ModData {
 		public static final String
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
-		MC_STRING = Loader.MC_VERSION,
+		MC_STRING = "1.6.4",
 		VERSION = "1.5.0.3-" + MC_STRING,
 		DOMAIN = "tomahawk",
 		PACKAGE = "zotmc.tomahawk",

@@ -1,8 +1,5 @@
 package zotmc.tomahawk.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import net.minecraft.block.Block;
-import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 
 import com.google.common.cache.CacheBuilder;
@@ -20,49 +17,48 @@ public final class IdentityBlockMeta {
 		.build(new CacheLoader<IdentityBlockMeta, IdentityBlockMeta>() {
 				@Override public IdentityBlockMeta load(IdentityBlockMeta key) {
 				// give a new instance in order to allow proper garbage collection
-				return new IdentityBlockMeta(key.block, key.meta);
+				return new IdentityBlockMeta(key.blockId, key.meta);
 			}
 		});
 	
-	public static final IdentityBlockMeta AIR = of(Blocks.air, 0);
+	public static final IdentityBlockMeta AIR = of(0, 0);
 	
-	public final Block block;
-	public final int meta;
+	public final int blockId, meta;
 	
-	private IdentityBlockMeta(Block block, int meta) {
-		this.block = checkNotNull(block);
+	private IdentityBlockMeta(int blockId, int meta) {
+		this.blockId = blockId;
 		this.meta = meta;
 	}
 	
-	public static IdentityBlockMeta of(Block block, int meta) {
-		return cache.getUnchecked(new IdentityBlockMeta(block, meta));
+	public static IdentityBlockMeta of(int blockId, int meta) {
+		return cache.getUnchecked(new IdentityBlockMeta(blockId, meta));
 	}
 	
 	public NBTTagCompound toNBT() {
 		NBTTagCompound tags = new NBTTagCompound();
-		tags.setString("block", Utils.getNameForBlock(block));
+		tags.setShort("blockId", (short) blockId);
 		tags.setByte("meta", (byte) meta);
 		return tags;
 	}
 	
 	public static IdentityBlockMeta readFromNBT(NBTTagCompound tags) {
-		return of(Utils.getBlock(tags.getString("block")), tags.getByte("meta"));
+		return of(tags.getShort("blockId"), tags.getByte("meta"));
 	}
 	
 	@Override public int hashCode() {
-		return 31 * block.hashCode() + meta;
+		return 31 * blockId + meta;
 	}
 	
 	@Override public boolean equals(Object obj) {
 		if (obj instanceof IdentityBlockMeta) {
 			IdentityBlockMeta o = (IdentityBlockMeta) obj;
-			return o.block == block && o.meta == meta;
+			return o.blockId == blockId && o.meta == meta;
 		}
 		return false;
 	}
 	
 	@Override public String toString() {
-		return Utils.getNameForBlock(block) + "@" + meta;
+		return blockId + "@" + meta;
 	}
 	
 }

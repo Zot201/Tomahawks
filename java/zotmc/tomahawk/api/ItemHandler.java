@@ -9,7 +9,7 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Map;
 
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.api.Launchable.Category;
@@ -50,7 +50,7 @@ public interface ItemHandler {
 	
 	@InitialSpeed public float getInitialSpeed(ItemStack item);
 	
-	@Sound public SoundType getSound(ItemStack item, PlaybackType type);
+	@Sound public StepSound getSound(ItemStack item, PlaybackType type);
 	
 	@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action);
 	

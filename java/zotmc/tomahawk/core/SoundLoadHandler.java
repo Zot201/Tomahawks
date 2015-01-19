@@ -4,12 +4,12 @@ import static com.google.common.base.Preconditions.checkState;
 import static cpw.mods.fml.relauncher.Side.CLIENT;
 import net.minecraft.client.audio.SoundManager;
 import net.minecraftforge.client.event.sound.SoundLoadEvent;
+import net.minecraftforge.event.ForgeSubscribe;
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
 import zotmc.tomahawk.data.ReflData.ClientRefls;
 
 import com.google.common.base.Throwables;
 
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @SideOnly(CLIENT)
@@ -27,7 +27,7 @@ public class SoundLoadHandler {
 		}
 	}
 	
-	@SubscribeEvent public void onSoundLoad(SoundLoadEvent event) {
+	@ForgeSubscribe public void onSoundLoad(SoundLoadEvent event) {
 		@SuppressWarnings("deprecation") SoundManager m = event.manager;
 		
 		addSound(m, AxeTomahawk.DOMAIN + ":random/tomahawk.ogg");

@@ -17,26 +17,6 @@ public class AsmData {
 	public static final String CORE_MODID = AxeTomahawk.CORE_MODID;
 	private static final SimpleVersion MC_STRING = new SimpleVersion(AxeTomahawk.MC_STRING);
 	
-	public static class Pointables {
-		public static final String
-		POINTABLE_DESC = "zotmc/tomahawk/api/Pointable";
-		
-		public static final Typo
-		ENTITY_ARROW = Typo.of("net/minecraft/entity/projectile/EntityArrow"),
-		ENTITY_ITEM_FRAME = Typo.of("net/minecraft/entity/item/EntityItemFrame");
-		
-		public static final Messod
-		PROCESS_USE_ENTITY = Typo.of("net/minecraft/network/NetHandlerPlayServer")
-			.mess("processUseEntity", "func_147340_a")
-			.desc(Type.VOID_TYPE, "net/minecraft/network/play/client/C02PacketUseEntity"),
-		GET_MOUSE_OVER = Typo.of("net/minecraft/client/renderer/EntityRenderer")
-			.mess("getMouseOver", "func_78473_a")
-			.desc(Type.VOID_TYPE, Type.FLOAT_TYPE),
-		CAN_BE_COLLIDE_WITH = Typo.of("net/minecraft/entity/Entity")
-			.mess("canBeCollidedWith", "func_70067_L")
-			.desc(Type.BOOLEAN_TYPE);
-	}
-	
 	public static class SetHits {
 		private static final String
 		ITEM_IN_WORLD_MANAGER = "net/minecraft/"

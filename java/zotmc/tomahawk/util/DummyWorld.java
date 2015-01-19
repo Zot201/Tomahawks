@@ -2,10 +2,12 @@ package zotmc.tomahawk.util;
 
 import java.io.File;
 import java.util.List;
+import java.util.logging.Logger;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EnumCreatureType;
+import net.minecraft.logging.ILogAgent;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.util.IProgressUpdate;
@@ -29,15 +31,15 @@ public class DummyWorld extends World {
 	public DummyWorld() {
 		super(new DummySavehandler(), "dummy world",
 				new WorldSettings(new WorldInfo(new NBTTagCompound())),
-				new WorldProviderSurface(), new Profiler());
+				new WorldProviderSurface(), new Profiler(), new DummyLogAgent());
 	}
 	
 	@Override protected IChunkProvider createChunkProvider() {
 		return new DummyChunkProvider(this);
 	}
-	@Override protected int func_152379_p() {
+	/*@Override protected int func_152379_p() {
 		return 0;
-	}
+	}*/
 	@Override public Entity getEntityByID(int i) {
 		return EntityList.createEntityByID(i, this);
 	}
@@ -56,9 +58,9 @@ public class DummyWorld extends World {
 			return null;
 		}
 		@Override public void flush() { }
-		@Override public File getWorldDirectory() {
+		/*@Override public File getWorldDirectory() {
 			return null;
-		}
+		}*/
 		@Override public File getMapFileFromName(String s) {
 			return null;
 		}
@@ -99,7 +101,7 @@ public class DummyWorld extends World {
 		@Override public List getPossibleCreatures(EnumCreatureType type, int i, int j, int k) {
 			return ImmutableList.of();
 		}
-		@Override public ChunkPosition func_147416_a(World world, String s, int i, int j, int k) {
+		@Override public ChunkPosition findClosestStructure(World world, String s, int i, int j, int k) {
 			return null;
 		}
 		@Override public int getLoadedChunkCount() {
@@ -107,6 +109,21 @@ public class DummyWorld extends World {
 		}
 		@Override public void recreateStructures(int x, int y) { }
 		@Override public void saveExtraData() { }
+	}
+	
+	private static class DummyLogAgent implements ILogAgent {
+		private final Logger logger = Logger.getLogger("DummyLogAgent");
+		
+		@Override public void logInfo(String s) { }
+		@Override public Logger func_120013_a() {
+			return logger;
+		}
+		@Override public void logWarning(String s) { }
+		@Override public void logWarningFormatted(String s, Object... args) { }
+		@Override public void logWarningException(String s, Throwable throwable) { }
+		@Override public void logSevere(String s) { }
+		@Override public void logSevereException(String s, Throwable throwable) { }
+		@Override public void logFine(String s) { }
 	}
 	
 }

@@ -7,13 +7,15 @@ import java.lang.reflect.Field;
 
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.client.audio.SoundManager;
+import net.minecraft.dispenser.RegistrySimple;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
-import net.minecraft.util.RegistrySimple;
+import net.minecraftforge.event.ASMEventHandler;
+import net.minecraftforge.event.EventBus;
 import zotmc.tomahawk.util.Fields;
 import zotmc.tomahawk.util.Fields.FieldAccess;
 import zotmc.tomahawk.util.Refls;
@@ -24,8 +26,6 @@ import com.google.common.base.Optional;
 import com.google.common.reflect.Invokable;
 
 import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.eventhandler.ASMEventHandler;
-import cpw.mods.fml.common.eventhandler.EventBus;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public class ReflData {

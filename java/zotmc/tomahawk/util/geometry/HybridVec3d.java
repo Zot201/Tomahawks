@@ -7,7 +7,7 @@ public class HybridVec3d extends CylindricalVec3d {
 	private Double x, z;
 	
 	public HybridVec3d() { }
-	
+
 	private HybridVec3d(double y, double rho, int phi, Double x, Double z) {
 		super(y, rho, phi);
 		this.x = x;
@@ -16,7 +16,7 @@ public class HybridVec3d extends CylindricalVec3d {
 	
 	
 	// internal
-	
+
 	@Override protected Vec3d copy() {
 		return new HybridVec3d(y(), rho(), phi(), x, z);
 	}

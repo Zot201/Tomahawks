@@ -99,5 +99,5 @@ public final class Messod {
 	@Override public String toString() {
 		return String.format("%s.[%s]", owner, Joiner.on(", ").join(names));
 	}
-	
+
 }

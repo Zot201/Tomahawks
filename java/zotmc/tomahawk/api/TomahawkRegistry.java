@@ -3,7 +3,6 @@ package zotmc.tomahawk.api;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static zotmc.tomahawk.core.LogTomahawk.api4j;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -53,8 +52,8 @@ public class TomahawkRegistry {
 				getDelegations(handler, row, reg, null);
 				
 				row.putAll(reg);
-				TomahawksCore.instance.log.info("Associated %s with %s involving %d item handling%s: %s",
-						itemType, handler, reg.size(), reg.size() == 1 ? "" : "s", toString(reg));
+				TomahawksCore.instance.log.fine(String.format("Associated %s with %s involving %d item handling%s: %s",
+						itemType, handler, reg.size(), reg.size() == 1 ? "" : "s", toString(reg)));
 			}
 		}
 	}
@@ -98,8 +97,9 @@ public class TomahawkRegistry {
 					try {
 						launchable = c.getAnnotation(Launchable.class);
 					} catch (Throwable e) {
-						TomahawksCore.instance.log.error("Failed to get annotation for %s", c);
-						TomahawksCore.instance.log.catching(e);
+						TomahawksCore.instance.log.severe(String.format("Failed to get annotation for %s", c));
+						TomahawksCore.instance.log.severe("catching");
+						e.printStackTrace();
 					}
 					
 					if (launchable != null) {
@@ -144,8 +144,8 @@ public class TomahawkRegistry {
 								}
 								
 								delegations.putAll(r);
-								api4j().debug("Associated %s with %s involving %d item handling%s: %s",
-										c, obj, r.size(), r.size() == 1 ? "" : "s", toString(r));
+								/*api4j().debug("Associated %s with %s involving %d item handling%s: %s",
+										c, obj, r.size(), r.size() == 1 ? "" : "s", toString(r));*/
 							}
 						}
 						
@@ -165,16 +165,16 @@ public class TomahawkRegistry {
 				
 				if (!delegations.isEmpty()) {
 					int i = delegations.size();
-					api4j().debug("Found %d item handling%s under %s: %s",
+					/*api4j().debug("Found %d item handling%s under %s: %s",
 							i, i == 1 ? "" : "s", item.getClass(), toString(delegations));
-					api4j().debug("Building new item handler base on %s...", baseHandler);
+					api4j().debug("Building new item handler base on %s...", baseHandler);*/
 				}
 				
 				ItemHandler handler = makeHandler(baseHandler, delegations);
 				computedHandlers.put(item.getClass(), handler);
 			}
 		
-		api4j().debug("Computed Handlers:\n" + Joiner.on('\n').join(computedHandlers.entrySet()));
+		/*api4j().debug("Computed Handlers:\n" + Joiner.on('\n').join(computedHandlers.entrySet()));*/
 	}
 	
 	private static String toString(Map<Class<? extends Annotation>, Delegation> map) {

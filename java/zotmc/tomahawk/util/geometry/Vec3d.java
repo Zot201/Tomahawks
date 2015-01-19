@@ -7,7 +7,6 @@ import java.util.Formatter;
 import java.util.Random;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.AxisAlignedBB;
@@ -19,7 +18,7 @@ import zotmc.tomahawk.util.Utils;
 public abstract class Vec3d implements Formattable {
 	
 	Vec3d() { }
-	
+
 	public static Vec3d zero() {
 		return ZERO;
 	}
@@ -175,7 +174,7 @@ public abstract class Vec3d implements Formattable {
 	public Vec3d cross(Vec3d vec, double f) {
 		return cross(vec.x(), vec.y(), vec.z(), f);
 	}
-	
+
 	public Vec3d relativize(Vec3d vec) {
 		Vec3d ret = copy();
 		ret.subtract(vec);
@@ -197,14 +196,13 @@ public abstract class Vec3d implements Formattable {
 	public IdentityBlockMeta getBlockMeta(World world, int side) {
 		SideHit s = SideHit.of(side);
 		int x = Utils.floor(x()) + s.x(), y = Utils.floor(y()) + s.y(), z = Utils.floor(z()) + s.z();
-		return IdentityBlockMeta.of(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
+		return IdentityBlockMeta.of(world.getBlockId(x, y, z), world.getBlockMetadata(x, y, z));
 	}
 	
 	public boolean canBlockCollideCheck(World world, boolean flag) {
 		int x = Utils.floor(x()), y = Utils.floor(y()), z = Utils.floor(z());
-		Block block = world.getBlock(x, y, z);
-		return block.getMaterial() != Material.air
-				&& block.canCollideCheck(world.getBlockMetadata(x, y, z), flag);
+		int blockId = world.getBlockId(x, y, z);
+		return blockId != 0 && Block.blocksList[blockId].canCollideCheck(world.getBlockMetadata(x, y, z), flag);
 	}
 	
 	public AxisAlignedBB addCoord(AxisAlignedBB aabb) {
@@ -219,7 +217,7 @@ public abstract class Vec3d implements Formattable {
 	
 	
 	// others
-	
+
 	public boolean isNaN() {
 		double x = x();
 		if (x != x)

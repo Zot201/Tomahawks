@@ -2,9 +2,8 @@ package zotmc.tomahawk.projectile;
 
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.util.EntityDamageSourceIndirect;
-import net.minecraft.util.IChatComponent;
 import net.minecraft.util.StatCollector;
 
 public class DamageSourceFakePlayer extends EntityDamageSourceIndirect {
@@ -13,14 +12,14 @@ public class DamageSourceFakePlayer extends EntityDamageSourceIndirect {
 		super("player", fakePlayer, fakePlayer);
 	}
 
-	@Override public IChatComponent func_151519_b(EntityLivingBase living) {
-		IChatComponent comp = (getEntity() == null ? damageSourceEntity : getEntity()).func_145748_c_();
+	@Override public ChatMessageComponent getDeathMessage(EntityLivingBase living) {
+		String s = (getEntity() == null ? damageSourceEntity : getEntity()).getTranslatedEntityName();
 		ItemStack item = getEntity() instanceof EntityLivingBase ? ((EntityLivingBase) getEntity()).getHeldItem() : null;
-		String s = "death.attack.thrown.item";
-		String s1 = s + ".item";
-		return item != null && item.hasDisplayName() && StatCollector.canTranslate(s1) ?
-				new ChatComponentTranslation(s1, living.func_145748_c_(), comp, item.func_151000_E())
-				: new ChatComponentTranslation(s, living.func_145748_c_(), comp);
+		String s1 = "death.attack.thrown.item";
+		String s2 = s1 + ".item";
+		return item != null && item.hasDisplayName() && StatCollector.func_94522_b(s1) ?
+				ChatMessageComponent.createFromTranslationWithSubstitutions(s2, living.getTranslatedEntityName(), s, item.getDisplayName())
+				: ChatMessageComponent.createFromTranslationWithSubstitutions(s1, living.getTranslatedEntityName(), s);
 	}
 	
 }

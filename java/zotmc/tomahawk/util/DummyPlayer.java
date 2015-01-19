@@ -1,17 +1,17 @@
 package zotmc.tomahawk.util;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ChatMessageComponent;
 import net.minecraft.util.ChunkCoordinates;
-import net.minecraft.util.IChatComponent;
 import net.minecraft.world.World;
 
 public class DummyPlayer extends EntityPlayer {
 	
 	public DummyPlayer(World world) {
-		super(world, Utils.newGameProfile(null, "dummy player"));
+		super(world, "dummy player");
 	}
-	
-	@Override public void addChatMessage(IChatComponent msg) { }
+
+	@Override public void sendChatToPlayer(ChatMessageComponent msg) { }
 	
 	@Override public boolean canCommandSenderUseCommand(int i, String s) {
 		return false;

@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import zotmc.tomahawk.api.ItemHandler.EnchantmentAction;
@@ -50,7 +50,7 @@ public @interface Launchable {
 	
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target(ElementType.METHOD)
-	@Usage(ref = "getSound", desc = {SoundType.class, ItemStack.class, PlaybackType.class})
+	@Usage(ref = "getSound", desc = {StepSound.class, ItemStack.class, PlaybackType.class})
 	public @interface Sound { }
 	
 	@Retention(RetentionPolicy.RUNTIME)

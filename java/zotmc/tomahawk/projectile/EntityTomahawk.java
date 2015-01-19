@@ -14,7 +14,7 @@ import java.lang.ref.WeakReference;
 import java.util.Random;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.dispenser.IPosition;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
@@ -29,9 +29,6 @@ import net.minecraft.potion.Potion;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-
-import org.apache.logging.log4j.Logger;
-
 import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.Pointable;
@@ -39,7 +36,6 @@ import zotmc.tomahawk.api.TomahawkRegistry;
 import zotmc.tomahawk.api.WeaponDispenseEvent;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
-import zotmc.tomahawk.core.LogTomahawk;
 import zotmc.tomahawk.core.PlayerTracker;
 import zotmc.tomahawk.core.TomahawkImpls;
 import zotmc.tomahawk.util.Fields;
@@ -86,7 +82,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	public int knockbackStr;
 	public int sideHit = -1;
 	public final Runnable ticker = createTicker();
-	private WeakReference<FakePlayerTomahawk> fakePlayer = new WeakReference<>(null);
+	private WeakReference<FakePlayerTomahawk> fakePlayer = new WeakReference<FakePlayerTomahawk>(null);
 	
 	public final HybridVec3d projectileMotion = new HybridVec3d() {
 		@Override protected boolean normalize() {
@@ -123,7 +119,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		
 		if (!world.isRemote) {
 			BaseAttributeMap attrs = new ServersideAttributeMap();
-			attrs.registerAttribute(attackDamage);
+			attrs.func_111150_b(attackDamage);
 			attrs.applyAttributeModifiers(item.getAttributeModifiers());
 			damageAttr = (float) attrs.getAttributeInstance(attackDamage).getAttributeValue();
 		}
@@ -184,9 +180,6 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		this.item.set(item);
 		if (Config.current().igniteFireRespect.get() && Utils.getEnchLevel(Enchantment.fireAspect, item) > 0)
 			setFire(100);
-		
-		aRoll.set((float) rand.nextGaussian() * 15/2F);
-		bRoll.set((float) rand.nextGaussian()  * 1/2F);
 	}
 	
 	protected Runnable createTicker() {
@@ -199,7 +192,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		super.entityInit();
 		getDataWatcher().addObject(2, (float) 0);
 		getDataWatcher().addObject(3, (int) -1);
-		getDataWatcher().addObject(4, (byte) 0b1);
+		getDataWatcher().addObject(4, (byte) 1);
 		getDataWatcher().addObject(5, (byte) 0);
 		getDataWatcher().addObject(6, (float) 0);
 		getDataWatcher().addObject(7, (float) 0);
@@ -245,7 +238,6 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		tags.setFloat("aRoll", aRoll.get());
 		tags.setFloat("bRoll", bRoll.get());
 	}
-	
 	@Override public void readEntityFromNBT(NBTTagCompound tags) {
 		super.readEntityFromNBT(tags);
 		stateByte.set(tags.getByte("state"));
@@ -355,7 +347,6 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 				&& pickUpType.canBePickedUpBy(player.capabilities.isCreativeMode ? CREATIVE : SURVIVAL)) {
 			Props.toggle(isFixed);
 			player.swingItem();
-			PlayerTracker.get(player).onInteract();
 			return true;
 		}
 		return false;
@@ -371,7 +362,7 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	
 	public FakePlayerTomahawk createFakePlayer(WorldServer world) {
 		FakePlayerTomahawk fakePlayer = new FakePlayerTomahawk(world, this);
-		this.fakePlayer = new WeakReference<>(fakePlayer);
+		this.fakePlayer = new WeakReference<FakePlayerTomahawk>(fakePlayer);
 		return fakePlayer;
 	}
 	
@@ -379,41 +370,37 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		return rand;
 	}
 	
-	private static final Logger phy4j() {
-		return LogTomahawk.phy4j();
-	}
-	
-	@Override public void func_145775_I() {
-		super.func_145775_I();
+	@Override public void doBlockCollisions() {
+		super.doBlockCollisions();
 	}
 	
 	protected void playInAirSound(double v2) {
 		ItemStack item = this.item.get();
-		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.IN_AIR);
+		StepSound hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.IN_AIR);
 		
 		if (hitSound != null)
-			playSound(hitSound.soundName, Utils.closed(0, 1, (float) v2 * 16), hitSound.getPitch());
+			playSound(hitSound.stepSoundName, Utils.closed(0, 1, (float) v2 * 16), hitSound.getPitch());
 	}
 	
 	public void playEntityHitSound() {
 		ItemStack item = this.item.get();
-		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.HIT_ENTITY);
+		StepSound hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.HIT_ENTITY);
 		
 		if (hitSound != null)
-			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
+			playSound(hitSound.stepSoundName, hitSound.getVolume(), hitSound.getPitch());
 	}
 	
 	public void playBlockHitSound(boolean isStationary, Block block, Vec3i position) {
 		float hardness = position.getBlockHardness(worldObj, block);
 		ItemStack item = this.item.get();
-		SoundType hitSound = TomahawkRegistry.getItemHandler(item)
+		StepSound hitSound = TomahawkRegistry.getItemHandler(item)
 				.getSound(item, hardness < 1 ? PlaybackType.HIT_BLOCK_WEAK : PlaybackType.HIT_BLOCK);
 
 		if (hitSound != null)
-			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
+			playSound(hitSound.stepSoundName, hitSound.getVolume(), hitSound.getPitch());
 		else if (hardness >= 1) {
 			
-			SoundType s = block.stepSound;
+			StepSound s = block.stepSound;
 			float vol = s.getVolume() * 28 / hardness;
 			float pit = s.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
 			

@@ -1,6 +1,5 @@
 package zotmc.tomahawk.projectile;
 
-import static zotmc.tomahawk.core.LogTomahawk.phy4j;
 import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_AIR;
 import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_GROUND;
 import static zotmc.tomahawk.projectile.EntityTomahawk.State.NO_REBOUNCE;
@@ -17,7 +16,7 @@ import static zotmc.tomahawk.util.geometry.SideHit.WEST;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import net.minecraft.block.material.Material;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
@@ -85,28 +84,6 @@ public class TickerTomahawk implements Runnable {
 			motion = hawk.projectileMotion;
 			hawk.projectileMotion.setValues(hawk.entityMotion);
 			isDominant = true;
-		}
-	}
-	
-	protected void debugInfo(boolean spacing, String title) {
-		if (!hawk.worldObj.isRemote) {
-			if (title != null)
-				phy4j().debug(title);
-			phy4j().debug("State:        %s", hawk.state.get());
-			phy4j().debug("Pos:          %.1s", pos);
-			phy4j().debug("Motion:       %.3s", motion);
-			phy4j().debug("Rotation Yaw: %#.1s", hawk.entityRotationYaw);
-			phy4j().debug("Rotation:     %#.1s", hawk.rotation);
-			if (spacing)
-				phy4j().debug("");
-		}
-	}
-	
-	protected void debugInfo(String title, String format, Object... args) {
-		if (!hawk.worldObj.isRemote) {
-			if (title != null)
-				phy4j().debug(title);
-			phy4j().debug(format, args);
 		}
 	}
 	
@@ -203,10 +180,10 @@ public class TickerTomahawk implements Runnable {
 	protected void tickNoRebounce() {
 		Props.increment(hawk.ticksInAir);
 		
-		MovingObjectPosition mop = hawk.worldObj.func_147447_a(
+		MovingObjectPosition mop = hawk.worldObj.rayTraceBlocks_do_do(
 				pos.toVec3(),
 				Utils.sumVec3(pos, motion),
-				false, true, false
+				false, true
 		);
 		if (mop != null) {
 			pos.setValues(mop.hitVec);
@@ -263,10 +240,10 @@ public class TickerTomahawk implements Runnable {
 	protected void tickInAir() {
 		Props.increment(hawk.ticksInAir);
 		
-		MovingObjectPosition blockMop = hawk.worldObj.func_147447_a(
+		MovingObjectPosition blockMop = hawk.worldObj.rayTraceBlocks_do_do(
 				pos.toVec3(),
 				Utils.sumVec3(pos, motion),
-				false, true, false
+				false, true
 		);
 		MovingObjectPosition entityMop = null;
 		
@@ -307,7 +284,8 @@ public class TickerTomahawk implements Runnable {
 			}
 			
 			if (nearest != null) {
-				entityMop = new MovingObjectPosition(nearest, nearestIntercept.hitVec);
+				entityMop = new MovingObjectPosition(nearest);
+				entityMop.hitVec = nearestIntercept.hitVec;
 				entityMop.hitInfo = nearestIntercept.hitInfo;
 			}
 		}
@@ -356,7 +334,7 @@ public class TickerTomahawk implements Runnable {
 		}
 		
 		hawk.setPosition(pos.x(), pos.y(), pos.z());
-		hawk.func_145775_I();
+		hawk.doBlockCollisions();
 	}
 	
 	protected void tickEntityImpact(final MovingObjectPosition mop) {
@@ -378,10 +356,10 @@ public class TickerTomahawk implements Runnable {
 				hawk.playEntityHitSound();
 		}
 		
-		MovingObjectPosition blockMop = hawk.worldObj.func_147447_a(
+		MovingObjectPosition blockMop = hawk.worldObj.rayTraceBlocks_do_do(
 				pos.toVec3(),
 				Utils.sumVec3(pos, motion),
-				false, true, false
+				false, true
 		);
 		
 		if (blockMop == null)
@@ -425,12 +403,13 @@ public class TickerTomahawk implements Runnable {
 				motion.subtract(pos);
 				pos.subtract(motion, 0.05 / motion.norm());
 				
-				if (b.block.getMaterial() != Material.air) {
+				if (b.blockId != 0) {
+					Block bl = Block.blocksList[b.blockId];
 					if (!hawk.worldObj.isRemote && !hawk.isFragile.get())
-						hawk.playBlockHitSound(true, b.block, hawk.inTilePos);
+						hawk.playBlockHitSound(true, bl, hawk.inTilePos);
 					hawk.state.set(IN_GROUND);
 					
-					hawk.inTilePos.onEntityCollidedWithBlock(hawk.worldObj, b.block, hawk);
+					hawk.inTilePos.onEntityCollidedWithBlock(hawk.worldObj, bl, hawk);
 				}
 			}
 			
@@ -443,7 +422,7 @@ public class TickerTomahawk implements Runnable {
 		}
 		else {
 			mop.hitInfo = SideHit.of(mop.sideHit).asVec3d();
-			
+
 			onItemUse(mop);
 			
 			tickRebounce(mop, hawk.getBlockRestitutionFactor(), Vec3d.zero());
@@ -457,7 +436,9 @@ public class TickerTomahawk implements Runnable {
 				hawk.startBreaking();
 			else {
 				Vec3i p = new MopBlockVec3i(mop);
-				hawk.playBlockHitSound(false, p.getBlock(hawk.worldObj), p);
+				int b = p.getBlockId(hawk.worldObj);
+				if (b != 0)
+					hawk.playBlockHitSound(false, Block.blocksList[b], p);
 			}
 		}
 	}

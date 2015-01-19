@@ -9,23 +9,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Set;
+import java.util.Collection;
 
-import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.common.config.Configuration;
-import zotmc.tomahawk.core.LogTomahawk.LogCategory;
+import net.minecraftforge.common.Configuration;
 import zotmc.tomahawk.core.TomahawksCore;
 import zotmc.tomahawk.util.Fields;
 import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Predicate;
-
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
-import cpw.mods.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent;
-import cpw.mods.fml.relauncher.Side;
 
 public class Config {
 	
@@ -50,7 +43,7 @@ public class Config {
 	
 	@ApplyHot @Core
 	public final Configurable<Boolean>
-	goldenFusion = new ConfigurableBoolean(ENCHS, "goldenFusion"),
+	//goldenFusion = new ConfigurableBoolean(ENCHS, "goldenFusion"),
 	igniteFireRespect = new ConfigurableBoolean(ENCHS, "igniteFireRepect").set(true);
 	@Core
 	public final Configurable<Integer>
@@ -62,10 +55,6 @@ public class Config {
 	tiCLumerAxesThrowing = new ConfigurableBoolean(COMPS, "tiCLumberAxesThrowing").set(true),
 	tiCFryingPansThrowing = new ConfigurableBoolean(COMPS, "tiCFryingPansThrowing")/*,
 	tiCHammersThrowing = new ConfigurableBoolean(COMPS, "tiCHammersThrowing").set(true)*/;
-	
-	@ApplyHot @Core @NoSync
-	public final Configurable<Set<LogCategory>>
-	debugLoggings = new ConfigurableEnumSet<>(LogCategory.class, DEBUG, "loggings");
 	
 	
 	
@@ -81,11 +70,11 @@ public class Config {
 		local = preserved.copy();
 		current = local;
 		
-		FMLCommonHandler.instance().bus().register(preserved);
-		TomahawksCore.instance.network.registerMessage(ConfigPacketHandler.class, ConfigPacket.class, 0, Side.CLIENT);
+		//FMLCommonHandler.instance().bus().register(preserved);
+		//TomahawksCore.instance.network.registerMessage(ConfigPacketHandler.class, ConfigPacket.class, 0, Side.CLIENT);
 	}
 	
-	@SubscribeEvent public void onClientConnect(PlayerLoggedInEvent event) {
+	/*@SubscribeEvent public void onClientConnect(PlayerLoggedInEvent event) {
 		if (event.player instanceof EntityPlayerMP)
 			TomahawksCore.instance.network.sendTo(new ConfigPacket(local), (EntityPlayerMP) event.player);
 	}
@@ -98,7 +87,7 @@ public class Config {
 	@SubscribeEvent public void onServerDisconnect(ClientDisconnectionFromServerEvent event) {
 		current = local;
 		TomahawksCore.instance.onServerStop(null);
-	}
+	}*/
 	
 	static Config preserved() {
 		return preserved;
@@ -114,10 +103,12 @@ public class Config {
 	
 	private static Iterable<Field> configurableFields() {
 		return Utils.asIterable(Config.class.getDeclaredFields())
-				.filter(new Predicate<Field>() { public boolean apply(Field input) {
-					return !Modifier.isStatic(input.getModifiers())
-							&& Configurable.class.isAssignableFrom(input.getType());
-				}});
+				.filter(new Predicate<Field>() {
+					@Override public boolean apply(Field input) {
+						return !Modifier.isStatic(input.getModifiers())
+								&& Configurable.class.isAssignableFrom(input.getType());
+					}
+				});
 	}
 	
 	Config apply(Config config) {
@@ -182,12 +173,13 @@ public class Config {
 	
 	@SuppressWarnings("unchecked")
 	Config readFromNBT(NBTTagCompound tags) {
-		for (String key : (Set<String>) tags.func_150296_c())
+		for (NBTBase t : (Collection<NBTBase>) tags.getTags())
 			try {
-				Configurable<?> c = (Configurable<?>) Config.class.getField(key).get(this);
-				c.readFromNBT(tags.getCompoundTag(key));
+				Configurable<?> c = (Configurable<?>) Config.class.getField(t.getName()).get(this);
+				c.readFromNBT((NBTTagCompound) t);
 			} catch (Throwable e) {
-				TomahawksCore.instance.log.catching(e);
+				TomahawksCore.instance.log.severe("catching");
+				e.printStackTrace();
 			}
 		
 		return this;

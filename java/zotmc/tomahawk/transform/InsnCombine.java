@@ -1,10 +1,11 @@
 package zotmc.tomahawk.transform;
 
 import static com.google.common.base.Preconditions.checkState;
+
+import java.util.logging.Logger;
+
 import net.minecraft.launchwrapper.IClassTransformer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -19,7 +20,7 @@ import com.google.common.base.Throwables;
 
 abstract class InsnCombine implements IClassTransformer {
 	
-	private final Logger log = LogManager.getFormatterLogger(AsmData.CORE_MODID);
+	private final Logger log = Logger.getLogger(AsmData.CORE_MODID);
 	private final Messod target;
 	
 	public InsnCombine(Messod target) {
@@ -33,7 +34,8 @@ abstract class InsnCombine implements IClassTransformer {
 		try {
 			return !target.getOwner().isClass(transformedName) ? basicClass : patch(basicClass);
 		} catch (Throwable e) {
-			log.catching(e);
+			log.severe("catching");
+			e.printStackTrace();
 			throw Throwables.propagate(e);
 		}
 	}
@@ -41,7 +43,7 @@ abstract class InsnCombine implements IClassTransformer {
 	protected abstract void combine(InsnList list, AbstractInsnNode insnNode);
 	
 	protected byte[] patch(byte[] basicClass) throws Throwable {
-		log.info("Patching %s...", target);
+		log.info(String.format("Patching %s...", target));
 		
 		ClassNode classNode = new ClassNode();
 		new ClassReader(basicClass).accept(classNode, 0);
@@ -61,11 +63,11 @@ abstract class InsnCombine implements IClassTransformer {
 				classNode.accept(cw);
 				
 				LoadingPluginTomahawk.transformed.add(target.getOwner());
-				log.info("Wrapped %d instruction%s", count, count == 1 ? "" : "s");
+				log.info(String.format("Wrapped %d instruction%s", count, count == 1 ? "" : "s"));
 				return cw.toByteArray();
 			}
 		
-		log.error("Failed to patch %s", target);
+		log.severe(String.format("Failed to patch %s", target));
 		return basicClass;
 	}
 	

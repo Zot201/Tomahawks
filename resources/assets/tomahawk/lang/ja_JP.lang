@@ -7,9 +7,6 @@ tomahawk.gui.off=なし
 tomahawk.gui.resetAll=初期化
 tomahawk.gui.disabled=無効
 
-tomahawk.gui.config.classical=クラシカル
-tomahawk.gui.config.reduced=弱め
-
 tomahawk.gui.config.title=%s 設定
 tomahawk.gui.config.resolver.title=%s ID 競合解消
 tomahawk.gui.config.doneRemarked=%s (要再起動)
@@ -19,8 +16,6 @@ tomahawk.gui.config.saveProceed=セーブして続行
 tomahawk.gui.config.general=一般
 tomahawk.gui.config.commonAxesThrowing=通常斧投擲
 tomahawk.gui.config.throwableItems=投擲可能アイテム
-tomahawk.gui.config.freeRetrieval=自由回収
-tomahawk.gui.config.entityRestitution=エンティティ反発
 
 tomahawk.gui.config.enchantments=エンチャント
 tomahawk.gui.config.igniteFireRespect=火属性アイテムの着火

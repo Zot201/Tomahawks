@@ -1,7 +1,7 @@
 package zotmc.tomahawk.config;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.Configuration;
 
 public class ConfigurableInteger extends Configurable<Integer> {
 	

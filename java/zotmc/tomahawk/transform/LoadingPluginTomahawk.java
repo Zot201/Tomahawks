@@ -16,8 +16,8 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 	
 	@Override public String[] getASMTransformerClass() {
 		return new String[] {
-				TransformerProcessUseEntity.class.getName(),
-				TransformerGetMouseOver.class.getName(),
+				//TransformerProcessUseEntity.class.getName(),
+				//TransformerGetMouseOver.class.getName(),
 				TransformerActivateBlockOrUseItem.class.getName()
 		};
 	}
@@ -32,8 +32,12 @@ public class LoadingPluginTomahawk implements IFMLLoadingPlugin {
 	
 	@Override public void injectData(Map<String, Object> data) { }
 	
-	@Override public String getAccessTransformerClass() {
+	/*@Override public String getAccessTransformerClass() {
 		return null;
+	}*/
+
+	@Override public String[] getLibraryRequestClass() {
+		return new String[0];
 	}
 	
 	

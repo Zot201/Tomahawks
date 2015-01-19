@@ -2,40 +2,39 @@ package zotmc.tomahawk.config;
 
 import static com.google.common.base.Predicates.isNull;
 
+import java.util.Arrays;
 import java.util.Set;
 
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.Configuration;
 import zotmc.tomahawk.util.TransformedSet;
+import zotmc.tomahawk.util.Utils;
 
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-import cpw.mods.fml.common.registry.GameData;
-
-public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, String> {
+public class ConfigurableItemIdSet extends ConfigurableStringList<Set<Integer>, Integer> {
 
 	ConfigurableItemIdSet(String category, String key) {
 		super(category, key);
 	}
 	
-	@Override protected Set<String> getInitialValue() {
+	@Override protected Set<Integer> getInitialValue() {
 		return ImmutableSet.of();
 	}
-	@Override protected Function<String, String> toStringFunction() {
-		return Functions.identity();
+	@Override protected Function<Integer, String> toStringFunction() {
+		return Utils.toStringFunction();
 	}
-	@Override protected Function<String, String> valueOfFunction() {
-		return Functions.identity();
+	@Override protected Function<String, Integer> valueOfFunction() {
+		return IntegerParser.INSTANCE;
 	}
 	
-	@Override protected void setIterable(FluentIterable<String> iterable) {
+	@Override protected void setIterable(FluentIterable<Integer> iterable) {
 		value = iterable.toSet();
 	}
 	
@@ -46,28 +45,28 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 	}
 	
 	private class ItemSet extends Configurable<Set<Item>> {
-		private final Function<Item, String> toString = new Function<Item, String>() {
-			@Override public String apply(Item input) {
-				return GameData.getItemRegistry().getNameForObject(input);
+		private final Function<Item, Integer> toInteger = new Function<Item, Integer>() {
+			@Override public Integer apply(Item input) {
+				return Arrays.binarySearch(Item.itemsList, input);
 			}
 		};
 		
-		private final Function<String, Item> valueOf = new Function<String, Item>() {
-			@Override public Item apply(String input) {
-				return GameData.getItemRegistry().getRaw(input);
+		private final Function<Integer, Item> valueOf = new Function<Integer, Item>() {
+			@Override public Item apply(Integer input) {
+				return Item.itemsList[input];
 			}
 		};
 		
-		private Set<Item> value = Sets.filter(new TransformedSet<String, Item>() {
-			@Override protected Set<String> backing() {
+		private Set<Item> value = Sets.filter(new TransformedSet<Integer, Item>() {
+			@Override protected Set<Integer> backing() {
 				return ConfigurableItemIdSet.this.value;
 			}
-			@Override protected Function<String, Item> transformation() {
+			@Override protected Function<Integer, Item> transformation() {
 				return valueOf;
 			}
 			
 			@Override public boolean contains(Object o) {
-				return o instanceof Item && backing().contains(toString.apply((Item) o));
+				return o instanceof Item && backing().contains(toInteger.apply((Item) o));
 			}
 			
 			@Override public boolean add(Item e) {
@@ -87,10 +86,10 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 		}
 		@Override Configurable<Set<Item>> set(Set<Item> value) {
 			ConfigurableItemIdSet.this.set(ImmutableSet
-					.<String>builder()
+					.<Integer>builder()
 					.addAll(Collections2.transform(
 							value,
-							toString))
+							toInteger))
 					.addAll(Sets.filter(
 							ConfigurableItemIdSet.this.value,
 							Predicates.compose(isNull(), valueOf)))
@@ -110,6 +109,13 @@ public class ConfigurableItemIdSet extends ConfigurableStringList<Set<String>, S
 		}
 		@Override void readFromNBT(NBTTagCompound tags) {
 			throw new UnsupportedOperationException();
+		}
+	}
+	
+	private enum IntegerParser implements Function<String, Integer> {
+		INSTANCE;
+		@Override public Integer apply(String input) {
+			return Integer.parseInt(input);
 		}
 	}
 	

@@ -4,22 +4,19 @@ import static net.minecraft.entity.SharedMonsterAttributes.attackDamage;
 import static zotmc.tomahawk.util.Utils.PI;
 import static zotmc.tomahawk.util.Utils.atan2;
 import static zotmc.tomahawk.util.Utils.sqrt;
+import net.minecraft.entity.ai.attributes.Attribute;
+import net.minecraft.entity.ai.attributes.AttributeInstance;
 import net.minecraft.entity.ai.attributes.BaseAttributeMap;
-import net.minecraft.entity.ai.attributes.IAttribute;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.ai.attributes.ServersideAttributeMap;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.FakePlayer;
 import zotmc.tomahawk.data.ModData.AxeTomahawk;
-import zotmc.tomahawk.util.Utils;
-
-import com.mojang.authlib.GameProfile;
 
 public class FakePlayerTomahawk extends FakePlayer {
 	
-	private static final GameProfile NAME = Utils.newGameProfile(null, AxeTomahawk.MODID + ".fakePlayer");
+	private static final String NAME = AxeTomahawk.MODID + ".fakePlayer";
 	
 	public final EntityTomahawk tomahawk;
 	
@@ -63,12 +60,12 @@ public class FakePlayerTomahawk extends FakePlayer {
 		}
 	}
 	
-	@Override public IAttributeInstance getEntityAttribute(IAttribute attr) {
+	@Override public AttributeInstance getEntityAttribute(Attribute attr) {
 		if (attr != null && attr.equals(attackDamage)) {
 			BaseAttributeMap attrs = new ServersideAttributeMap();
-			attrs.registerAttribute(attackDamage);
-			IAttributeInstance ret = attrs.getAttributeInstance(attackDamage);
-			ret.setBaseValue(tomahawk.damageAttr);
+			attrs.func_111150_b(attackDamage);
+			AttributeInstance ret = attrs.getAttributeInstance(attackDamage);
+			ret.setAttribute(tomahawk.damageAttr);
 			return ret;
 		}
 		return super.getEntityAttribute(attr);

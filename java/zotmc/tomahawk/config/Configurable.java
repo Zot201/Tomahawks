@@ -3,7 +3,7 @@ package zotmc.tomahawk.config;
 import java.util.Objects;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.Configuration;
 
 import com.google.common.base.Supplier;
 

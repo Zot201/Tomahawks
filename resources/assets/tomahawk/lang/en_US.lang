@@ -7,9 +7,6 @@ tomahawk.gui.off=Off
 tomahawk.gui.resetAll=Reset All
 tomahawk.gui.disabled=Disabled
 
-tomahawk.gui.config.classical=Classical
-tomahawk.gui.config.reduced=Reduced
-
 tomahawk.gui.config.title=%s Config
 tomahawk.gui.config.resolver.title=%s ID Conflict Resolver
 tomahawk.gui.config.doneRemarked=%s (Restart Required)
@@ -19,8 +16,6 @@ tomahawk.gui.config.saveProceed=Save & Proceed
 tomahawk.gui.config.general=General
 tomahawk.gui.config.commonAxesThrowing=Common Axes Throwing
 tomahawk.gui.config.throwableItems=Throwable Items
-tomahawk.gui.config.freeRetrieval=Free Retrieval
-tomahawk.gui.config.entityRestitution=Entity Restitution
 
 tomahawk.gui.config.enchantments=Enchantments
 tomahawk.gui.config.igniteFireRespect=Ignite Fire Respect Items

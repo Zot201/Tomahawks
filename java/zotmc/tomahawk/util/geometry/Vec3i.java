@@ -42,12 +42,12 @@ public abstract class Vec3i implements Formattable {
 		setValues(mop.blockX, mop.blockY, mop.blockZ);
 	}
 	
-	public Block getBlock(World world) {
-		return world.getBlock(x(), y(), z());
+	public int getBlockId(World world) {
+		return world.getBlockId(x(), y(), z());
 	}
 	public IdentityBlockMeta getBlockMeta(World world) {
 		int x = x(), y = y(), z = z();
-		return IdentityBlockMeta.of(world.getBlock(x, y, z), world.getBlockMetadata(x, y, z));
+		return IdentityBlockMeta.of(world.getBlockId(x, y, z), world.getBlockMetadata(x, y, z));
 	}
 	public float getBlockHardness(World world, Block block) {
 		return block.getBlockHardness(world, x(), y(), z());

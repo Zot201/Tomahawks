@@ -1,14 +1,14 @@
 package zotmc.tomahawk.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import net.minecraft.block.Block.SoundType;
+import net.minecraft.block.StepSound;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.Cancelable;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import zotmc.tomahawk.api.ItemHandler.PlaybackType;
-import cpw.mods.fml.common.eventhandler.Cancelable;
 
 @Cancelable
 public class WeaponLaunchEvent extends LivingEvent {
@@ -41,9 +41,9 @@ public class WeaponLaunchEvent extends LivingEvent {
 			if (!entity.worldObj.isRemote) {
 				entity.worldObj.spawnEntityInWorld(handler.createProjectile(this));
 				
-				SoundType s = handler.getSound(item, PlaybackType.LAUNCH);
+				StepSound s = handler.getSound(item, PlaybackType.LAUNCH);
 				if (s != null)
-					entity.worldObj.playSoundAtEntity(entityLiving, s.soundName, s.getVolume(), s.getPitch());
+					entity.worldObj.playSoundAtEntity(entityLiving, s.stepSoundName, s.getVolume(), s.getPitch());
 			}
 			
 			return true;
