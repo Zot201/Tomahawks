@@ -49,9 +49,7 @@ public class GuiConfigScreen extends GuiScreen {
 					new GuiPropToggle(ConfigI18ns.TIC_HATCHETS_THROWING, config.tiCHatchetsThrowing),
 					new GuiPropToggle(ConfigI18ns.TIC_LUMBER_AXES_THROWING, config.tiCLumerAxesThrowing),
 					new GuiPropToggle(ConfigI18ns.TIC_FRYING_PANS_THROWING, config.tiCFryingPansThrowing)/*,
-					new GuiPropToggle(ConfigI18ns.TIC_HAMMERS_THROWING, config.tiCHammersThrowing)*/,
-					new GuiPropToggle(ConfigI18ns.MEK_AXES_THROWING, config.mekAxesThrowing),
-					new GuiPropToggle(ConfigI18ns.MEK_PAXEL_THROWING, config.mekPaxelsThrowing)
+					new GuiPropToggle(ConfigI18ns.TIC_HAMMERS_THROWING, config.tiCHammersThrowing)*/
 			);
 		if (mek)
 			list.addEntries(
