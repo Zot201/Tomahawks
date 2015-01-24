@@ -5,9 +5,11 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import zotmc.tomahawk.api.ItemHandler;
 import zotmc.tomahawk.api.PickUpType;
 import zotmc.tomahawk.api.TomahawkAPI;
 import zotmc.tomahawk.api.TomahawkRegistry;
+import zotmc.tomahawk.api.WeaponCategory;
 import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.util.Utils;
 import cpw.mods.fml.common.eventhandler.Event;
@@ -30,8 +32,12 @@ public class TomahawkHooks {
 		
 		if (tracker.getAfterInteract() != 0) {
 			ItemStack item = player.getHeldItem();
-			WeaponLaunchEvent launchEvent =
-					new WeaponLaunchEvent(player, Utils.itemStack(item, 1), TomahawkRegistry.getItemHandler(item));
+			if (item == null) return;
+			
+			ItemHandler h = TomahawkRegistry.getItemHandler(item);
+			if (h == WeaponCategory.DISABLED) return;
+			
+			WeaponLaunchEvent launchEvent = new WeaponLaunchEvent(player, Utils.itemStack(item, 1), h);
 			
 			boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
 			boolean creative = player.capabilities.isCreativeMode;
