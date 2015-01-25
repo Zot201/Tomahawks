@@ -181,7 +181,7 @@ public class AsmData {
 					Label l0 = new Label(), l1 = new Label();
 					
 					pre.invokestatic(TomahawkHookss.IS_LAUNCHABLE, false);
-					pre.ifne(l0);
+					pre.ifeq(l0);
 					pre.pop(11);
 					pre.iconst(0);
 					pre.goTo(l1);
