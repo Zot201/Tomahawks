@@ -39,7 +39,7 @@ public class TomahawkHooks {
 			
 			WeaponLaunchEvent launchEvent = new WeaponLaunchEvent(player, Utils.itemStack(item, 1), h);
 			
-			boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
+			boolean replica = !player.isSneaking() && Utils.getEnchLevel(TomahawkAPI.replica, item) > 0;
 			boolean creative = player.capabilities.isCreativeMode;
 			
 			if (replica) {

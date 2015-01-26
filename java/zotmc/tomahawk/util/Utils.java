@@ -192,6 +192,10 @@ public class Utils {
 		};
 	}
 	
+	public static int getEnchLevel(Feature<Enchantment> enchantment, ItemStack item) {
+		return !enchantment.exists() ? -1 : getEnchLevel(enchantment.get(), item);
+	}
+	
 	public static int getEnchLevel(Enchantment enchantment, ItemStack item) {
 		return EnchantmentHelper.getEnchantmentLevel(enchantment.effectId, item);
 	}

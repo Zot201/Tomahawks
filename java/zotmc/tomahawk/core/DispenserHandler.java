@@ -95,7 +95,7 @@ class DispenserHandler extends FallbackingMap<Item, IBehaviorDispenseItem> {
 				
 				event.isForwardSpin = rand.nextBoolean();
 				
-				boolean replica = Utils.getEnchLevel(TomahawkAPI.replica.get(), item) > 0;
+				boolean replica = Utils.getEnchLevel(TomahawkAPI.replica, item) > 0;
 				
 				if (replica) {
 					event.setPickUpType(PickUpType.ENCH);
