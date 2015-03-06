@@ -8,6 +8,7 @@ import java.util.List;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import zotmc.tomahawk.data.I18nData.ConfigI18ns;
+import zotmc.tomahawk.data.ModData.CoFHCore;
 import zotmc.tomahawk.data.ModData.MekanismTools;
 import zotmc.tomahawk.data.ModData.TConstruct;
 
@@ -39,8 +40,9 @@ public class GuiConfigScreen extends GuiScreen {
 		
 		boolean tic = Loader.isModLoaded(TConstruct.MODID);
 		boolean mek = Loader.isModLoaded(MekanismTools.MODID);
+		boolean cofh = Loader.isModLoaded(CoFHCore.MODID);
 		
-		if (tic || mek)
+		if (tic || mek || cofh)
 			list.addEntries(
 					new GuiPropCat(ConfigI18ns.COMPATIBILITIES)
 			);
@@ -48,13 +50,16 @@ public class GuiConfigScreen extends GuiScreen {
 			list.addEntries(
 					new GuiPropToggle(ConfigI18ns.TIC_HATCHETS_THROWING, config.tiCHatchetsThrowing),
 					new GuiPropToggle(ConfigI18ns.TIC_LUMBER_AXES_THROWING, config.tiCLumerAxesThrowing),
-					new GuiPropToggle(ConfigI18ns.TIC_FRYING_PANS_THROWING, config.tiCFryingPansThrowing)/*,
-					new GuiPropToggle(ConfigI18ns.TIC_HAMMERS_THROWING, config.tiCHammersThrowing)*/
+					new GuiPropToggle(ConfigI18ns.TIC_FRYING_PANS_THROWING, config.tiCFryingPansThrowing)
 			);
 		if (mek)
 			list.addEntries(
 					new GuiPropToggle(ConfigI18ns.MEK_AXES_THROWING, config.mekAxesThrowing),
 					new GuiPropToggle(ConfigI18ns.MEK_PAXEL_THROWING, config.mekPaxelsThrowing)
+			);
+		if (cofh)
+			list.addEntries(
+					new GuiPropToggle(ConfigI18ns.COFH_AXES_THROWING, config.cofhAxesThrowing)
 			);
 	}
 	

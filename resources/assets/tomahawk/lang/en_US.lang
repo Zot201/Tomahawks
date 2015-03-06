@@ -33,6 +33,7 @@ tomahawk.gui.config.tiCFryingPansThrowing=TiC Frying Pans Throwing
 tomahawk.gui.config.tiCHammersThrowing=TiC Hammers Throwing
 tomahawk.gui.config.mekAxesThrowing=Mekanism Axes Throwing
 tomahawk.gui.config.mekPaxelsThrowing=Mekanism Paxels Throwing
+tomahawk.gui.config.cofhAxesThrowing=CoFH Core Axes Throwing
 
 enchantment.tomahawk.replica=Replica
 

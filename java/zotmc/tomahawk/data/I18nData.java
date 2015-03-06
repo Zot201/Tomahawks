@@ -33,6 +33,7 @@ public class I18nData {
 		TIC_HAMMERS_THROWING = Utils.localize("tomahawk.gui.config.tiCHammersThrowing"),
 		MEK_AXES_THROWING = Utils.localize("tomahawk.gui.config.mekAxesThrowing"),
 		MEK_PAXEL_THROWING = Utils.localize("tomahawk.gui.config.mekPaxelsThrowing"),
+		COFH_AXES_THROWING = Utils.localize("tomahawk.gui.config.cofhAxesThrowing"),
 		
 		RESET_ALL = Utils.localize("tomahawk.gui.resetAll"),
 		

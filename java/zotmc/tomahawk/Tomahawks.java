@@ -9,10 +9,8 @@ import static zotmc.tomahawk.data.ModData.AxeTomahawk.VERSION;
 import java.util.Random;
 
 import net.minecraft.block.Block.SoundType;
-import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemAxe;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,26 +19,21 @@ import zotmc.tomahawk.api.ItemHandler.EnchantmentAction;
 import zotmc.tomahawk.api.ItemHandler.PlaybackType;
 import zotmc.tomahawk.api.Launchable.Category;
 import zotmc.tomahawk.api.Launchable.ConfigState;
-import zotmc.tomahawk.api.Launchable.DispenseFactory;
 import zotmc.tomahawk.api.Launchable.Enchanting;
 import zotmc.tomahawk.api.Launchable.InitialSpeed;
-import zotmc.tomahawk.api.Launchable.LaunchFactory;
 import zotmc.tomahawk.api.Launchable.Sound;
 import zotmc.tomahawk.api.TomahawkRegistry;
 import zotmc.tomahawk.api.WeaponCategory;
-import zotmc.tomahawk.api.WeaponDispenseEvent;
-import zotmc.tomahawk.api.WeaponLaunchEvent;
 import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.data.ModData;
+import zotmc.tomahawk.data.ModData.CoFHCore;
 import zotmc.tomahawk.data.ModData.MekanismTools;
 import zotmc.tomahawk.data.ModData.TConstruct;
-import zotmc.tomahawk.projectile.EntityTomahawk;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.EntityRegistry;
 
 @Mod(modid = MODID, name = NAME, version = VERSION, dependencies = DEPENDENCIES, guiFactory = GUI_FACTORY)
 public class Tomahawks {
@@ -75,7 +68,6 @@ public class Tomahawks {
 					}
 				});
 
-				EntityRegistry.registerModEntity(EntityLumberAxe.class, "lumberAxe", 0, this, 64, 18, true);
 				TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.LUMBER_AXE), new Object() {
 					@Category public WeaponCategory category() {
 						return WeaponCategory.AXE;
@@ -89,25 +81,7 @@ public class Tomahawks {
 					@InitialSpeed public float getInitialSpeed(ItemStack item) {
 						return 0.7F * category().getInitialSpeed(item);
 					}
-					@LaunchFactory public Entity createProjectile(WeaponLaunchEvent event) {
-						return new EntityLumberAxe(event);
-					}
-					@DispenseFactory public Entity createDispenserProjectile(WeaponDispenseEvent event) {
-						return new EntityLumberAxe(event);
-					}
 				});
-
-				/*TomahawkRegistry.registerItemHandler(Class.forName(TConstruct.HAMMER), new Object() {
-					@Category public WeaponCategory category() {
-						return WeaponCategory.HAMMER;
-					}
-					@ConfigState protected boolean isEnabled() {
-						return Config.current().tiCHammersThrowing.get();
-					}
-					@Enchanting public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
-						return false;
-					}
-				});*/
 
 				final Random rand = new Random();
 				final SoundType hitSound = new SoundType(TConstruct.FRYPAN_HIT, 1, 1) {
@@ -149,22 +123,17 @@ public class Tomahawks {
 			} catch (Throwable e) {
 				log.catching(e);
 			}
+		
+		if (Loader.isModLoaded(CoFHCore.MODID))
+			try {
+				TomahawkRegistry.registerItemHandler(Class.forName(CoFHCore.AXE), new Object() {
+					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
+					@ConfigState public boolean isEnabled() { return Config.current().cofhAxesThrowing.get(); }
+				});
+			} catch (Throwable e) {
+				log.catching(e);
+			}
 
-	}
-
-	public static class EntityLumberAxe extends EntityTomahawk {
-		public EntityLumberAxe(World world) {
-			super(world);
-		}
-		public EntityLumberAxe(WeaponLaunchEvent event) {
-			super(event);
-		}
-		public EntityLumberAxe(WeaponDispenseEvent event) {
-			super(event);
-		}
-		@Override protected float getDragFactor() {
-			return 1.2F * super.getDragFactor();
-		}
 	}
 
 }

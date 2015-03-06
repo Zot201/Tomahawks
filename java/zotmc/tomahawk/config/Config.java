@@ -58,13 +58,10 @@ public class Config {
 	public final Configurable<Boolean>
 	tiCHatchetsThrowing = new ConfigurableBoolean(COMPS, "tiCHatchetsThrowing").set(true),
 	tiCLumerAxesThrowing = new ConfigurableBoolean(COMPS, "tiCLumberAxesThrowing").set(true),
-	tiCFryingPansThrowing = new ConfigurableBoolean(COMPS, "tiCFryingPansThrowing")/*,
-	tiCHammersThrowing = new ConfigurableBoolean(COMPS, "tiCHammersThrowing").set(true)*/;
-
-	@ApplyHot
-	public final Configurable<Boolean>
+	tiCFryingPansThrowing = new ConfigurableBoolean(COMPS, "tiCFryingPansThrowing"),
 	mekAxesThrowing = new ConfigurableBoolean(COMPS, "mekAxesThrowing").set(true),
-	mekPaxelsThrowing = new ConfigurableBoolean(COMPS, "mekPaxelsThrowing").set(true);
+	mekPaxelsThrowing = new ConfigurableBoolean(COMPS, "mekPaxelsThrowing").set(true),
+	cofhAxesThrowing = new ConfigurableBoolean(COMPS, "cofhAxesThrowing").set(true);
 
 	@ApplyHot @Core @NoSync
 	public final Configurable<Set<LogCategory>>
