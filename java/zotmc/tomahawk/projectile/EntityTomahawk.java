@@ -12,7 +12,9 @@ import static zotmc.tomahawk.projectile.EntityTomahawk.State.IN_AIR;
 
 import java.lang.ref.WeakReference;
 import java.util.Random;
+import java.util.UUID;
 
+import com.mojang.util.UUIDTypeAdapter;
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.dispenser.IPosition;
@@ -60,19 +62,19 @@ import zotmc.tomahawk.util.prop.Prop;
 import zotmc.tomahawk.util.prop.Props;
 
 public class EntityTomahawk extends EntityArrow implements Pointable {
-	
+
 	public enum State {
 		IN_AIR,
 		IN_GROUND,
 		NO_REBOUNCE,
 		ON_GROUND;
-		
+
 		public boolean isStationary() {
 			return (ordinal() & 1) == 1;
 		}
 	}
-	
-	
+
+
 	public final Vec3d entityMotion = EntityGeometry.getMotion(this);
 	public final Angle entityRotationYaw = EntityGeometry.getRotationYaw(this);
 	public final Vec3d pos = EntityGeometry.getPos(this);
@@ -80,14 +82,15 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 	public final Vec3i inTilePos = Fields.asVec3i(this, X_TILE, Y_TILE, Z_TILE);
 	protected final Prop<Integer> ticksInGround = Fields.referTo(this, TICKS_IN_GROUND).ofType(int.class);
 	protected final Prop<Integer> ticksInAir = Fields.referTo(this, TICKS_IN_AIR).ofType(int.class);
-	
+
 	public PickUpType pickUpType = PickUpType.SURVIVAL;
 	public float damageAttr;
 	public int knockbackStr;
 	public int sideHit = -1;
 	public final Runnable ticker = createTicker();
 	private WeakReference<FakePlayerTomahawk> fakePlayer = new WeakReference<>(null);
-	
+	private UUID shootingEntityUUID;
+
 	public final HybridVec3d projectileMotion = new HybridVec3d() {
 		@Override protected boolean normalize() {
 			if (super.normalize()) {
@@ -108,19 +111,19 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 			return phi + (Integer.MIN_VALUE / -2) * Props.toSignum(isForwardSpin);
 		}
 	});
-	
-	
-	
+
+
+
 	public EntityTomahawk(World world) {
 		super(world);
 	}
-	
+
 	public EntityTomahawk(World world, IPosition pos, ItemStack item) {
 		super(world, pos.getX(), pos.getY(), pos.getZ());
 		setSize(0.6F, 0.6F);
-		
+
 		projectileInit(item);
-		
+
 		if (!world.isRemote) {
 			BaseAttributeMap attrs = new ServersideAttributeMap();
 			attrs.registerAttribute(attackDamage);
@@ -128,21 +131,21 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 			damageAttr = (float) attrs.getAttributeInstance(attackDamage).getAttributeValue();
 		}
 	}
-	
+
 	public EntityTomahawk(World world, EntityLivingBase thrower, float initalSpeed, ItemStack item) {
 		super(world, thrower, initalSpeed / 1.5F);
 		setSize(0.6F, 0.6F);
-        //setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
-		
+		//setPosition(thrower.posX, thrower.posY + thrower.getEyeHeight(), thrower.posZ);
+
 		{
 			GeometryHelper.motion(thrower).addTo(entityMotion);
 			setThrowableHeading(motionX, motionY, motionZ, initalSpeed, 1);
 		}
-		
+
 		entityRotationYaw.setRadians(entityMotion.yaw());
-		
+
 		projectileInit(item);
-		
+
 		if (!world.isRemote) {
 			damageAttr = (float) thrower.getEntityAttribute(attackDamage).getAttributeValue();
 			if (thrower.isSprinting())
@@ -153,24 +156,24 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 				setIsCritical(true);
 		}
 	}
-	
+
 	public EntityTomahawk(WeaponLaunchEvent event) {
 		this(event.entity.worldObj, event.entityLiving, event.initialSpeed, event.item);
-		
+
 		isForwardSpin.set(event.isForwardSpin);
 		isRolled.set(!event.isForwardSpin);
 		pickUpType = event.getPickUpType();
 		isFragile.set(event.isFragile);
 	}
-	
+
 	public EntityTomahawk(WeaponDispenseEvent event) {
 		this(event.world, event.getPosition(), event.item);
-		
+
 		isForwardSpin.set(event.isForwardSpin);
 		isRolled.set(!event.isForwardSpin);
 		pickUpType = event.getPickUpType();
 		isFragile.set(event.isFragile);
-		
+
 		EnumFacing facing = event.getFacing();
 		setThrowableHeading(
 				facing.getFrontOffsetX(),
@@ -179,22 +182,22 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 				event.initialSpeed, event.deviation
 		);
 	}
-	
+
 	protected void projectileInit(ItemStack item) {
 		this.item.set(item);
 		if (Config.current().igniteFireRespect.get() && Utils.getEnchLevel(Enchantment.fireAspect, item) > 0)
 			setFire(100);
-		
+
 		aRoll.set((float) rand.nextGaussian() * 15/2F);
 		bRoll.set((float) rand.nextGaussian()  * 1/2F);
 	}
-	
+
 	protected Runnable createTicker() {
 		return new TickerTomahawk(this);
 	}
-	
-	
-	
+
+
+
 	@Override protected void entityInit() {
 		super.entityInit();
 		getDataWatcher().addObject(2, (float) 0);
@@ -205,27 +208,27 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		getDataWatcher().addObject(7, (float) 0);
 		getDataWatcher().addObjectByDataType(10, 5);
 	}
-	
+
 	public final Angle rotation = Props.ofAngle(Unit.DEGREE, this, 2);
-	
+
 	public final IntProp afterHit = Props.ofInt(this, 3);
-	
+
 	public final BooleanProp isForwardSpin = Props.ofBoolean(this, 4, 0);
 	public final BooleanProp isRolled = Props.ofBoolean(this, 4, 1);
 	public final BooleanProp isFixed = Props.ofBoolean(this, 4, 2);
 	public final BooleanProp isFragile = Props.ofBoolean(this, 4, 3);
 	public final BooleanProp isBreaking = Props.ofBoolean(this, 4, 4);
 	public final BooleanProp isInclined = Props.ofBoolean(this, 4, 5);
-	
+
 	private ByteProp stateByte = Props.ofByte(this, 5);
 	public Prop<State> state = Props.ofEnum(State.class, stateByte);
-	
+
 	public final FloatProp aRoll = Props.ofFloat(this, 6);
 	public final FloatProp bRoll = Props.ofFloat(this, 7);
-	
+
 	public final Prop<ItemStack> item = Props.ofItemStack(this, 10);
-	
-	
+
+
 	@Override public void writeEntityToNBT(NBTTagCompound tags) {
 		super.writeEntityToNBT(tags);
 		tags.setByte("state", stateByte.get());
@@ -244,8 +247,12 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		tags.setBoolean("isInclined", isInclined.get());
 		tags.setFloat("aRoll", aRoll.get());
 		tags.setFloat("bRoll", bRoll.get());
+		UUID uuid = getShootingEntityUUID();
+		if (uuid != null) {
+			tags.setString("shootingEntityUUID", UUIDTypeAdapter.fromUUID(uuid));
+		}
 	}
-	
+
 	@Override public void readEntityFromNBT(NBTTagCompound tags) {
 		super.readEntityFromNBT(tags);
 		stateByte.set(tags.getByte("state"));
@@ -264,18 +271,22 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		isInclined.set(tags.getBoolean("isInclined"));
 		aRoll.set(tags.getFloat("aRoll"));
 		bRoll.set(tags.getFloat("bRoll"));
+		if (tags.hasKey("shootingEntityUUID")) {
+			// このときにはまだEntityPlayerは生成されていない
+			shootingEntityUUID = UUIDTypeAdapter.fromString(tags.getString("shootingEntityUUID"));
+		}
 	}
-	
-	
-	
-	
+
+
+
+
 	@Override public void onUpdate() {
 		lastTickPosX = posX;
 		lastTickPosY = posY;
 		lastTickPosZ = posZ;
-		
+
 		super.onEntityUpdate();
-		
+
 		/*if (!worldObj.isRemote) {
 			phy4j().debug("====On Update====");
 			phy4j().debug("Entity ID:    %d", getEntityId());
@@ -287,69 +298,69 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 			phy4j().debug("Rotation Yaw: %#.1s", entityRotationYaw);
 			phy4j().debug("Rotation:     %#.1s", rotation);
 		}*/
-		
+
 		ticker.run();
-		
+
 		/*if (!worldObj.isRemote)
 			phy4j().debug("");*/
-		
+
 		setPosition(posX, posY, posZ);
 	}
-	
+
 	@Override public boolean canAttackWithItem() {
 		return true;
 	}
-	
+
 	@Override public boolean hitByEntity(Entity entity) {
 		return entity instanceof EntityPlayer && onLeftClick((EntityPlayer) entity);
 	}
-	
+
 	@Override public void onCollideWithPlayer(EntityPlayer player) {
 		if (!worldObj.isRemote && !isFixed.get() && readyForPickUp())
-			attemptPickingUp(player, player == shootingEntity);
+			attemptPickingUp(player, player == getShootingEntity());
 	}
-	
+
 	public boolean onLeftClick(EntityPlayer player) {
 		if (!worldObj.isRemote && (!isFixed.get() || player.isSneaking()) && state.get().isStationary())
 			attemptPickingUp(player, true);
-		
+
 		return true; // return true to indicate no further process
 	}
-	
+
 	public boolean attemptPickingUp(EntityPlayer player, boolean flag) {
 		boolean creative = player.capabilities.isCreativeMode;
-		
+
 		if (pickUpType.canBePickedUpBy(creative ? CREATIVE : SURVIVAL)) {
 			PlayerTracker tracker = null;
-			
+
 			flag = flag || Config.current().freeRetrieval.get();
 			if (!flag) {
 				int t = (tracker = PlayerTracker.get(player)).getAfterInteract();
 				flag = t >= 0 && t < 1200;
 			}
-			
+
 			if (flag) {
 				ItemStack item = this.item.get();
-				
+
 				if (pickUpType.canBePickedUpBy(SURVIVAL)) {
 					if (player.getCurrentEquippedItem() == null)
 						player.setCurrentItemOrArmor(0, item);
 					else if (!player.inventory.addItemStackToInventory(item))
 						return false;
 				}
-				
+
 				playSound("random.pop", 0.2F, ((rand.nextFloat() - rand.nextFloat()) * 0.7F + 1) * 2);
 				player.onItemPickup(this, item.stackSize);
 				setDead();
-				
+
 				(tracker != null ? tracker : PlayerTracker.get(player)).onInteract();
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	@Override public boolean interactFirst(EntityPlayer player) {
 		if (state.get().isStationary() && player.isSneaking()
 				&& pickUpType.canBePickedUpBy(player.capabilities.isCreativeMode ? CREATIVE : SURVIVAL)) {
@@ -360,49 +371,49 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		}
 		return false;
 	}
-	
-	
-	
-	
+
+
+
+
 	public FakePlayerTomahawk getFakePlayer(WorldServer world) {
 		FakePlayerTomahawk fakePlayer = this.fakePlayer.get();
 		return fakePlayer != null ? fakePlayer : createFakePlayer(world);
 	}
-	
+
 	public FakePlayerTomahawk createFakePlayer(WorldServer world) {
 		FakePlayerTomahawk fakePlayer = new FakePlayerTomahawk(world, this);
 		this.fakePlayer = new WeakReference<>(fakePlayer);
 		return fakePlayer;
 	}
-	
+
 	Random rand() {
 		return rand;
 	}
-	
+
 	private static final Logger phy4j() {
 		return LogTomahawk.phy4j();
 	}
-	
+
 	@Override public void func_145775_I() {
 		super.func_145775_I();
 	}
-	
+
 	protected void playInAirSound(double v2) {
 		ItemStack item = this.item.get();
 		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.IN_AIR);
-		
+
 		if (hitSound != null)
 			playSound(hitSound.soundName, Utils.closed(0, 1, (float) v2 * 16), hitSound.getPitch());
 	}
-	
+
 	public void playEntityHitSound() {
 		ItemStack item = this.item.get();
 		SoundType hitSound = TomahawkRegistry.getItemHandler(item).getSound(item, PlaybackType.HIT_ENTITY);
-		
+
 		if (hitSound != null)
 			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
 	}
-	
+
 	public void playBlockHitSound(boolean isStationary, Block block, Vec3i position) {
 		float hardness = position.getBlockHardness(worldObj, block);
 		ItemStack item = this.item.get();
@@ -412,42 +423,42 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		if (hitSound != null)
 			playSound(hitSound.soundName, hitSound.getVolume(), hitSound.getPitch());
 		else if (hardness >= 1) {
-			
+
 			SoundType s = block.stepSound;
 			float vol = s.getVolume() * 28 / hardness;
 			float pit = s.getPitch() * (1.2F / rand.nextFloat() * 0.2F + 0.9F) * 2/5F;
-			
+
 			if (!isStationary)
 				vol /= 6;
-			
+
 			int n = (int) vol;
 			for (int i = 0; i < n; i++)
 				playSound(s.getBreakSound(), 1, pit);
-			
+
 			playSound(s.getBreakSound(), vol - n, pit);
 		}
 	}
-	
-	
-	
+
+
+
 	public boolean isPersistenceRequired() {
 		return isFixed.get() || (pickUpType != CREATIVE && item.get().hasDisplayName());
 	}
-	
+
 	public int getLifespan() {
 		if (pickUpType == SURVIVAL) {
 			ItemStack item = this.item.get();
 			if (item != null)
 				return item.getItem().getEntityLifespan(item, worldObj);
 		}
-		
+
 		return 1200;
 	}
-	
+
 	public boolean readyForPickUp() {
 		return state.get() != IN_AIR || afterHit.get() >= 5;
 	}
-	
+
 	public void onRelease(Vec3d motion) {
 		isFixed.set(false);
 		ticksInGround.set(0);
@@ -455,44 +466,62 @@ public class EntityTomahawk extends EntityArrow implements Pointable {
 		afterHit.set(-1);
 		motion.multiplyValues(rand, 0.2F);
 	}
-	
+
 	public void onBroken() {
 		TomahawkImpls.renderBrokenItemStack(this, item.get(), rand);
 		setDead();
 	}
-	
+
 	public void startBreaking() {
 		isBreaking.set(true);
 	}
-	
-	
-	
+
+	public Entity getShootingEntity() {
+		if (worldObj != null) {
+			// リスポーン時にEntityPlayerが別インスタンスになるため、shootingEntityを更新する
+			UUID uuid = getShootingEntityUUID();
+			if (uuid != null)
+				shootingEntity = worldObj.func_152378_a(shootingEntityUUID);
+		}
+		return shootingEntity;
+	}
+
+
+
 	protected float getDragFactor() {
 		return 0.06F;
 	}
-	
+
 	protected float getGravity() {
 		return 0.12F;
 	}
-	
+
 	protected float getSpinStrength() {
 		return afterHit.get() >= 0 ? 55/72F : getIsCritical() ? 7/6F : 1;
 	}
-	
+
 	protected float getSpinMagnusFactor() {
 		return 0.02F;
 	}
-	
+
 	protected double getSpinFrictionFactor() {
 		return 2.51;
 	}
-	
+
 	protected double getEntityRestitutionFactor() {
 		return 0.27 * (Config.current().reduceEntityRestitution.get() ? 1/6D : 1);
 	}
-	
+
 	protected double getBlockRestitutionFactor() {
 		return 0.24;
 	}
-	
+
+
+
+	private UUID getShootingEntityUUID() {
+		if (shootingEntityUUID == null && shootingEntity instanceof EntityPlayer) {
+			shootingEntityUUID = EntityPlayer.func_146094_a(((EntityPlayer) shootingEntity).getGameProfile());
+		}
+		return shootingEntityUUID;
+	}
 }
