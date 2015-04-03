@@ -17,7 +17,7 @@ public class ModData {
 		MODID = "axetomahawk",
 		NAME = "Tomahawks",
 		MC_STRING = Loader.MC_VERSION,
-		VERSION = "1.5.2.6-" + MC_STRING,
+		VERSION = "1.5.2.7-" + MC_STRING,
 		DOMAIN = "tomahawk",
 		PACKAGE = "zotmc.tomahawk",
 		GUI_FACTORY = PACKAGE + ".config.GuiConfigs",
@@ -88,11 +88,18 @@ public class ModData {
 		AXE = "mekanism.tools.item.ItemMekanismAxe",
 		PAXEL = "mekanism.tools.item.ItemMekanismPaxel";
 	}
-	
+
 	@Requirements("1.7 = 1.7")
 	public static class CoFHCore {
 		@Modid public static final String MODID = "CoFHCore";
 		public static final String
 		AXE = "cofh.core.item.tool.ItemAxeAdv";
+	}
+
+	@Requirements("1.7.10 = 1.7.10")
+	public static class RedstoneArsenal {
+		@Modid public static final String MODID = "RedstoneArsenal";
+		public static final String
+		AXE_RF = "cofh.redstonearsenal.item.tool.ItemAxeRF";
 	}
 }

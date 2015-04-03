@@ -28,6 +28,7 @@ import zotmc.tomahawk.config.Config;
 import zotmc.tomahawk.data.ModData;
 import zotmc.tomahawk.data.ModData.CoFHCore;
 import zotmc.tomahawk.data.ModData.MekanismTools;
+import zotmc.tomahawk.data.ModData.RedstoneArsenal;
 import zotmc.tomahawk.data.ModData.TConstruct;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
@@ -123,10 +124,20 @@ public class Tomahawks {
 			} catch (Throwable e) {
 				log.catching(e);
 			}
-		
+
 		if (Loader.isModLoaded(CoFHCore.MODID))
 			try {
 				TomahawkRegistry.registerItemHandler(Class.forName(CoFHCore.AXE), new Object() {
+					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
+					@ConfigState public boolean isEnabled() { return Config.current().cofhAxesThrowing.get(); }
+				});
+			} catch (Throwable e) {
+				log.catching(e);
+			}
+
+		if (Loader.isModLoaded(RedstoneArsenal.MODID))
+			try {
+				TomahawkRegistry.registerItemHandler(Class.forName(RedstoneArsenal.AXE_RF), new Object() {
 					@Category public WeaponCategory category() { return WeaponCategory.AXE; }
 					@ConfigState public boolean isEnabled() { return Config.current().cofhAxesThrowing.get(); }
 				});
