@@ -1,5 +1,6 @@
 package zotmc.tomahawk.projectile;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static net.minecraft.client.renderer.ItemRenderer.renderItemIn2D;
 import static net.minecraft.init.Items.wooden_axe;
 import static org.lwjgl.opengl.GL11.GL_BLEND;
@@ -35,6 +36,7 @@ import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
@@ -43,9 +45,19 @@ import zotmc.tomahawk.projectile.EntityTomahawk.State;
 
 public class RenderTomahawk extends Render {
 	
+	public static class RenderPassHandler {
+		public int getRenderPasses(Item i, ItemStack item) {
+			return i.getRenderPasses(item.getItemDamage());
+		}
+	}
+	
 	private static final float ITEM_Z = 0.0625f;
-	private static final ResourceLocation RES_ITEM_GLINT =
-			new ResourceLocation("textures/misc/enchanted_item_glint.png");
+	private static final ResourceLocation RES_ITEM_GLINT = new ResourceLocation("textures/misc/enchanted_item_glint.png");
+	private final RenderPassHandler renderPassHandler;
+	
+	public RenderTomahawk(RenderPassHandler renderPassHandler) {
+		this.renderPassHandler = checkNotNull(renderPassHandler);
+	}
 	
 	@Override protected ResourceLocation getEntityTexture(Entity entity) {
 		return null;
@@ -110,7 +122,7 @@ public class RenderTomahawk extends Render {
 			bindTexture(TextureMap.locationItemsTexture);
 			
 			
-			int n = item.getItem().getRenderPasses(item.getItemDamage());
+			int n = renderPassHandler.getRenderPasses(item.getItem(), item);
 			for (int pass = 0; pass < n; pass++) {
 				IIcon icon = item.getItem().getIcon(item, pass);
 				renderIconIn3D(icon != null ? icon : wooden_axe.getIconFromDamage(0), ITEM_Z);

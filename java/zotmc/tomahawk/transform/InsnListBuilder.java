@@ -69,12 +69,12 @@ public final class InsnListBuilder extends InstructionAdapter {
 	
 	public void invokestatic(MethodPredicate method, boolean itf) {
 		MethodInfo m = method.toMethodInfo();
-		invokestatic(method.getOwner().toString(), m.getName(), m.getDescriptor());
+		invokestatic(method.getOwner().toString(), m.getName(), m.getDescriptor(), itf);
 	}
 	
 	public void invokevirtual(MethodPredicate method, boolean itf) {
 		MethodInfo m = method.toMethodInfo();
-		invokevirtual(method.getOwner().toString(), m.getName(), m.getDescriptor());
+		invokevirtual(method.getOwner().toString(), m.getName(), m.getDescriptor(), itf);
 	}
 	
 	public void getstatic(MethodPredicate field) {

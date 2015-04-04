@@ -19,6 +19,7 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -44,10 +45,12 @@ import zotmc.tomahawk.data.ModData;
 import zotmc.tomahawk.data.ModData.AdditionalEnchantments;
 import zotmc.tomahawk.data.ModData.MoreEnchants;
 import zotmc.tomahawk.data.ModData.OnlySilver;
+import zotmc.tomahawk.data.ModData.TConstruct;
 import zotmc.tomahawk.ench.EnchReplica;
 import zotmc.tomahawk.projectile.EntityTomahawk;
 import zotmc.tomahawk.projectile.FakePlayerTomahawk;
 import zotmc.tomahawk.projectile.RenderTomahawk;
+import zotmc.tomahawk.projectile.RenderTomahawk.RenderPassHandler;
 import zotmc.tomahawk.transform.LoadingPluginTomahawk;
 import zotmc.tomahawk.util.DummyPlayer;
 import zotmc.tomahawk.util.DummyWorld;
@@ -70,8 +73,6 @@ import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import cpw.mods.fml.common.eventhandler.Event;
 import cpw.mods.fml.common.eventhandler.EventBus;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.common.registry.EntityRegistry;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.relauncher.Side;
@@ -134,7 +135,17 @@ public class TomahawksCore {
 	
 	@SideOnly(CLIENT)
 	private void registerHandlers() {
-		RenderingRegistry.registerEntityRenderingHandler(EntityTomahawk.class, new RenderTomahawk());
+		RenderPassHandler h = new RenderPassHandler();
+		if (Loader.isModLoaded(TConstruct.MODID))
+			try {
+				final Class<? extends Item> toolCore = Class.forName(TConstruct.TOOL_CORE).asSubclass(Item.class);
+				h = new RenderPassHandler() { public int getRenderPasses(Item i, ItemStack item) {
+					return toolCore.isInstance(i) ? 10 : super.getRenderPasses(i, item);
+				}};
+			} catch (Throwable t) {
+				log.catching(t);
+			}
+		RenderingRegistry.registerEntityRenderingHandler(EntityTomahawk.class, new RenderTomahawk(h));
 		
 		if (Utils.MC_VERSION.isBelow("1.7.2"))
 			MinecraftForge.EVENT_BUS.register(new SoundLoadHandler());
