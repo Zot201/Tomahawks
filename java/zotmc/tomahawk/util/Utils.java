@@ -1,6 +1,7 @@
 package zotmc.tomahawk.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static zotmc.tomahawk.data.ReflData.EnchantmentHelpers.damageIterators;
 import static zotmc.tomahawk.data.ReflData.EnchantmentHelpers.modifierLivings;
 
@@ -11,6 +12,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.AbstractList;
@@ -459,13 +461,16 @@ public class Utils {
 		}
 	}
 	
-	public static <T> T construct(Class<T> clz) {
+	public static <T> T construct(Class<? extends T> clz) {
 		try {
-			Constructor<T> ctor = clz.getDeclaredConstructor();
+			Constructor<? extends T> ctor = clz.getDeclaredConstructor();
 			ctor.setAccessible(true);
 			return ctor.newInstance();
-		} catch (Throwable e) {
-			throw Throwables.propagate(e);
+		} catch (InvocationTargetException e) {
+			Throwable cause = e.getCause();
+			throw propagate(cause != null ? cause : e);
+		} catch (Throwable t) {
+			throw propagate(t);
 		}
 	}
 	
@@ -715,6 +720,17 @@ public class Utils {
 		public UnknownMethodException(Throwable cause) {
 			super(cause);
 		}
+	}
+	
+	
+	// exceptions
+	
+	public static RuntimeException propagate(Throwable t) {
+		return propagateWhatever(checkNotNull(t)); // sneaky throw
+	}
+	@SuppressWarnings("unchecked")
+	private static <T extends Throwable> T propagateWhatever(Throwable t) throws T {
+		throw (T) t;
 	}
 	
 }

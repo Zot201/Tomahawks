@@ -13,11 +13,11 @@ public class EnchReplica extends Enchantment {
 		super(id, 1, EnumEnchantmentType.breakable);
 	}
 	
-	@Override public int getMaxEnchantability(int lvl) {
+	@Override public int getMinEnchantability(int lvl) {
 		return 15;
 	}
 	
-	@Override public int getMinEnchantability(int lvl) {
+	@Override public int getMaxEnchantability(int lvl) {
 		return super.getMinEnchantability(lvl) + 50;
 	}
 	
