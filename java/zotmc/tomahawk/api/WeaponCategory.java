@@ -49,8 +49,8 @@ public enum WeaponCategory implements ItemHandler {
 			return new EntityTomahawk(event);
 		}
 	};
-	
-	
+
+
 	private static final Random rand = new Random();
 	private static final SoundType inAirSound = new SoundType(AxeTomahawk.DOMAIN + ":random.tomahawk", 1, 1) {
 		@Override public float getPitch() {
@@ -62,7 +62,7 @@ public enum WeaponCategory implements ItemHandler {
 			return 1.2F / (rand.nextFloat() * 0.2F + 0.9F) - 0.5F;
 		}
 	};
-	
+
 	@Override public WeaponCategory category() {
 		return this;
 	}
@@ -86,16 +86,16 @@ public enum WeaponCategory implements ItemHandler {
 		case LAUNCH:
 		case IN_AIR:
 			return inAirSound;
-			
+
 		case HIT_BLOCK_WEAK:
 			return hitSound;
-			
+
 		default:
 			return null;
 		}
 	}
 	@Override public boolean isEnchantable(ItemStack item, EnchantmentAction action) {
-		return action != EnchantmentAction.REPLICA && TomahawkAPI.isLaunchable(item);
+		return action != EnchantmentAction.REPLICA_ON_BOOK && TomahawkAPI.isLaunchable(item);
 	}
-	
+
 }
