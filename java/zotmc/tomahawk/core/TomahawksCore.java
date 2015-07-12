@@ -128,6 +128,7 @@ public class TomahawksCore {
 			else {
 				Reserve<Enchantment> replica = (Reserve<Enchantment>) TomahawkAPI.replica;
 				replica.set(new EnchReplica(id).setName(I18nData.NAME_REPLICA));
+				Enchantment.addToBookList(replica.get());
 			}
 		}
 	}

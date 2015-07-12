@@ -25,12 +25,25 @@ public class EnchReplica extends Enchantment {
 		return 1;
 	}
 	
-	@Override public boolean canApply(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA);
+	private boolean isType(ItemStack item) {
+		return type.canEnchantItem(item.getItem());
 	}
 	
+	/**
+	 * Secondary enchantments implementation.
+	 * Positive result indicate that Replica is a valid enchantment in most cases
+	 * (except enchanting table, which depends on canApplyAtEnchantingTable).
+	 */
+	@Override public boolean canApply(ItemStack item) {
+		return isType(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA_ON_BOOK);
+	}
+	
+	/**
+	 * Primary enchantments implementation.
+	 * Positive results indicate that Replica can be applied directly through enchanting table.
+	 */
 	@Override public boolean canApplyAtEnchantingTable(ItemStack item) {
-		return super.canApply(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA_ON_BOOK);
+		return isType(item) && TomahawkRegistry.getItemHandler(item).isEnchantable(item, REPLICA);
 	}
 
 }
